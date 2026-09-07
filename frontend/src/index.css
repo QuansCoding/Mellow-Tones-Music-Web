@@ -1,0 +1,48 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #14121a;
+  color: #ece9f1;
+}
+.container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+.header { display: flex; justify-content: space-between; align-items: center;
+          margin-bottom: 24px; }
+.header h1 { font-size: 24px; margin: 0; }
+
+.card { background: #1e1b26; border: 1px solid #2c2836; border-radius: 10px;
+        padding: 20px; margin-bottom: 20px; }
+.card h2 { margin: 0 0 16px; font-size: 18px; }
+
+label { display: block; font-size: 13px; margin-bottom: 4px; color: #a49db4; }
+input { width: 100%; padding: 9px 11px; margin-bottom: 14px; border-radius: 6px;
+        border: 1px solid #332f3f; background: #14121a; color: #ece9f1; }
+
+.button { padding: 9px 16px; border: 0; border-radius: 6px; cursor: pointer;
+          font-weight: 600; font-size: 14px; }
+.button:disabled { opacity: .5; cursor: not-allowed; }
+.button-primary { background: #7b5cff; color: #fff; }
+.button-danger  { background: #3a2630; color: #ff9b9b; }
+.linkish { background: none; border: 0; color: #9b86ff; cursor: pointer;
+           text-decoration: underline; font: inherit; padding: 0; }
+
+.error   { background: #3a2028; color: #ff9b9b; padding: 11px 14px;
+           border-radius: 6px; margin-bottom: 14px; font-size: 14px; }
+.loading, .empty { text-align: center; color: #a49db4; padding: 28px; }
+.hint { font-size: 12px; color: #a49db4; margin: -8px 0 14px; }
+
+.song-list { display: grid; gap: 16px;
+             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.song-card { background: #1e1b26; border: 1px solid #2c2836; border-radius: 10px;
+             padding: 16px; }
+.song-card h3 { margin: 0 0 4px; font-size: 16px; }
+.song-card .artist { margin: 0 0 2px; color: #a49db4; font-size: 14px; }
+.song-card .dur { margin: 0 0 14px; color: #6f6880; font-size: 12px; }
+.song-actions { display: flex; gap: 8px; }
+.song-actions .button { flex: 1; font-size: 13px; padding: 7px; }
+
+.player { background: #1e1b26; border: 1px solid #2c2836; border-radius: 10px;
+          padding: 18px; margin-bottom: 20px; }
+.player audio { width: 100%; margin-top: 12px; }
+.auth-screen { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.auth-screen .card { max-width: 380px; width: 100%; }
