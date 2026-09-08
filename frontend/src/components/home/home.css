@@ -1,0 +1,327 @@
+/* ============================================================
+   Home page sections
+   ============================================================ */
+
+.section + .section {
+  margin-top: var(--sp-7);
+}
+
+.section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.section__title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.section__link {
+  flex-shrink: 0;
+  padding: var(--sp-1) var(--sp-2);
+  margin: calc(var(--sp-1) * -1) calc(var(--sp-2) * -1);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-cream);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.section__link:hover {
+  background: var(--color-row-hover);
+}
+
+/* ============================================================
+   Album + artist grids
+   Card counts match the Figma (7 and 5); the tiles themselves are
+   fluid and hold their Figma aspect ratio, so a wide window makes
+   them bigger rather than stretching them.
+   ============================================================ */
+
+.grid {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+.grid--albums {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.grid--artists {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface);
+  border-radius: var(--radius-art);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card--album  { aspect-ratio: 137 / 125; }
+.card--artist { aspect-ratio: 200 / 125; }
+
+.card__art {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+/* Invisible over the flat placeholder, essential once real cover art
+   lands behind the label. */
+.card__info {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: var(--sp-6) var(--sp-3) var(--sp-3);
+  background: linear-gradient(to top, rgba(21, 10, 27, 0.75), transparent);
+}
+
+.card__title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  color: var(--color-text-pink);
+}
+
+.card--album .card__title  { font-size: var(--fs-md); }
+.card--artist .card__title { font-size: var(--fs-lg); }
+
+.card__subtitle {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-text-pink);
+}
+
+/* ============================================================
+   Trending table
+   The section is the query container, so columns drop on the
+   table's own width rather than the viewport's — which matters,
+   because the 220px sidebar is not part of it.
+   ============================================================ */
+
+.section--trending {
+  container-type: inline-size;
+  container-name: trending;
+}
+
+.trow {
+  display: grid;
+  grid-template-columns:
+    32px 76px minmax(0, 1.4fr) minmax(0, 1.1fr) minmax(0, 1fr) 56px 72px;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 56px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.trow--head {
+  min-height: 0;
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.trow--head:hover {
+  background: none;
+}
+
+.trow:not(.trow--head):hover {
+  background: var(--color-row-hover);
+}
+
+.trow--current .trow__title {
+  color: var(--color-accent);
+}
+
+.trow__col {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+}
+
+/* "TITLE" labels the rank+artwork+name group, as in the Figma. */
+.trow__col--title {
+  grid-column: span 2;
+}
+
+/* --- Rank / play swap ------------------------------------------------ */
+
+.trow__rank {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+}
+
+.trow__rank-num {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-pink);
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.trow__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-cream);
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.trow:hover .trow__play,
+.trow__play:focus-visible,
+.trow--current .trow__play {
+  opacity: 1;
+}
+
+.trow:hover .trow__rank-num,
+.trow--current .trow__rank-num {
+  opacity: 0;
+}
+
+/* --- Cells ----------------------------------------------------------- */
+
+.trow__art {
+  width: 100%;
+  aspect-ratio: 42 / 40;
+}
+
+.trow__song {
+  min-width: 0;
+}
+
+.trow__title,
+.trow__artist {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  color: var(--color-text-pink);
+}
+
+.trow__title  { font-size: var(--fs-md); }
+.trow__artist { font-size: var(--fs-xs); color: var(--color-text-soft); }
+
+.trow__album,
+.trow__plays,
+.trow__length {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-pink);
+}
+
+.trow__length {
+  font-variant-numeric: tabular-nums;
+}
+
+.trow__like {
+  display: flex;
+  justify-content: center;
+}
+
+.trow__heart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--color-accent);
+  border-radius: var(--radius-pill);
+  transition: color var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+
+.trow__heart:hover {
+  background: var(--color-row-hover);
+  color: var(--color-text-cream);
+}
+
+.trow__heart:active {
+  transform: scale(0.88);
+}
+
+.trow__heart--on {
+  color: var(--color-accent);
+}
+
+/* ============================================================
+   Progressive column dropping
+   Order requested: LENGTH goes first, then PLAYS, ALBUM last.
+   Rank, artwork, title/artist and the heart never drop.
+   ============================================================ */
+
+@container trending (max-width: 900px) {
+  .trow {
+    grid-template-columns:
+      32px 76px minmax(0, 1.4fr) minmax(0, 1.1fr) minmax(0, 1fr) 56px;
+  }
+  .trow__length { display: none; }
+}
+
+@container trending (max-width: 720px) {
+  .trow {
+    grid-template-columns: 32px 76px minmax(0, 1.6fr) minmax(0, 1fr) 56px;
+  }
+  .trow__plays { display: none; }
+}
+
+@container trending (max-width: 520px) {
+  .trow {
+    grid-template-columns: 28px 56px minmax(0, 1fr) 48px;
+    gap: var(--sp-2);
+  }
+  .trow__album { display: none; }
+}
+
+/* ============================================================
+   Grid breakpoints
+   ============================================================ */
+
+@media (max-width: 1240px) {
+  .grid--albums  { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .grid--artists { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1024px) {
+  .grid { gap: var(--sp-4); }
+  .grid--albums  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .grid--artists { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 768px) {
+  .grid--albums  { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid--artists { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  /* Artists stay two-up: a single 200:125 tile spanning the full width is
+     224px tall on a phone, so two of them swallow the whole screen. */
+  .grid--albums  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid--artists { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

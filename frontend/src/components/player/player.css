@@ -1,0 +1,496 @@
+/* ============================================================
+   Artwork
+   ============================================================ */
+
+.artwork {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-art);
+}
+
+.artwork--empty {
+  background: var(--color-surface-alt);
+}
+
+/* ============================================================
+   Shared range/seek treatment
+   20px tall hit area over a 6px visual track.
+   ============================================================ */
+
+.device__seek,
+.sheet__seek {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.device__seek:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.device__seek::-webkit-slider-runnable-track,
+.sheet__seek::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--color-text-cream) var(--progress, 0%),
+    var(--color-surface-alt) var(--progress, 0%)
+  );
+}
+
+.device__seek::-webkit-slider-thumb,
+.sheet__seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--color-text-cream);
+}
+
+.device__seek::-moz-range-track,
+.sheet__seek::-moz-range-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+}
+
+.device__seek::-moz-range-progress,
+.sheet__seek::-moz-range-progress {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-text-cream);
+}
+
+.device__seek::-moz-range-thumb,
+.sheet__seek::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-text-cream);
+}
+
+/* ============================================================
+   Sidebar device player (desktop)
+   ============================================================ */
+
+.device {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.device__screen {
+  position: relative;
+  aspect-ratio: 119 / 96;
+  width: 100%;
+  margin-bottom: var(--sp-1);
+}
+
+.device__add {
+  position: absolute;
+  top: var(--sp-1);
+  right: var(--sp-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  color: var(--color-text-cream);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.device__add:hover {
+  background: var(--color-surface-hover);
+}
+
+.device__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+}
+
+.device__time {
+  flex-shrink: 0;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-soft);
+}
+
+.device__track {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.device__song,
+.device__artist {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  color: var(--color-text-soft);
+}
+
+.device__song {
+  font-size: var(--fs-sm);
+  color: var(--color-text-cream);
+}
+
+.device__artist {
+  font-size: var(--fs-2xs);
+}
+
+/* D-pad: the Figma's plus-shaped control cluster, as a 3x3 grid. */
+.device__pad {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--sp-1);
+  align-items: center;
+  justify-items: center;
+}
+
+.device__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-cream);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+
+.device__btn:hover:not(:disabled) {
+  background: var(--color-surface-alt-hover);
+}
+
+.device__btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.device__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Every target clears the 24x24 WCAG 2.5.8 minimum; the Figma's were 24x18. */
+.device__btn--vol-up   { grid-area: 1 / 2; width: 34px; height: 26px; }
+.device__btn--prev     { grid-area: 2 / 1; width: 100%; max-width: 46px; height: 28px; }
+.device__btn--play     { grid-area: 2 / 2; width: 38px; height: 28px; }
+.device__btn--next     { grid-area: 2 / 3; width: 100%; max-width: 46px; height: 28px; }
+.device__btn--vol-down { grid-area: 3 / 2; width: 34px; height: 26px; }
+
+/* ============================================================
+   Mini player (tablet + mobile)
+   ============================================================ */
+
+.mini {
+  display: none;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 35;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--miniplayer-h);
+  padding: 0 var(--sp-2) 0 var(--sp-3);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: color-mix(in srgb, var(--color-sidebar-bg) 94%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--color-hairline);
+}
+
+.mini__progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--color-surface-alt);
+}
+
+.mini__progress::after {
+  content: '';
+  display: block;
+  width: var(--progress, 0%);
+  height: 100%;
+  background: var(--color-text-cream);
+  transition: width 200ms linear;
+}
+
+.mini__expand {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: var(--sp-3);
+  text-align: left;
+}
+
+.mini__art {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.mini__text {
+  min-width: 0;
+}
+
+.mini__title,
+.mini__artist {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mini__title {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.mini__artist {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--color-text-soft);
+}
+
+.mini__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+}
+
+/* 44px targets — Apple's HIG minimum, comfortably above WCAG's 24px. */
+.mini__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--color-text-cream);
+  border-radius: var(--radius-pill);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.mini__btn:hover {
+  background: var(--color-row-hover);
+}
+
+.mini__btn--play {
+  background: var(--color-surface-alt);
+}
+
+.mini__btn--play:hover {
+  background: var(--color-surface-alt-hover);
+}
+
+/* ============================================================
+   Now Playing sheet (tablet + mobile)
+   ============================================================ */
+
+.sheet {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-5);
+  padding: var(--sp-4) var(--sp-5) var(--sp-8);
+  background: var(--color-app-bg);
+  box-shadow: var(--shadow-sheet);
+  transform: translateY(100%);
+  visibility: hidden;
+  transition: transform var(--dur-med) var(--ease),
+              visibility var(--dur-med) var(--ease);
+}
+
+.sheet--open {
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.sheet__bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.sheet__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--color-text-soft);
+  border-radius: var(--radius-pill);
+}
+
+.sheet__close:hover {
+  background: var(--color-row-hover);
+  color: var(--color-text-cream);
+}
+
+.sheet__eyebrow {
+  flex: 1;
+  margin-right: 44px;
+  text-align: center;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.sheet__art {
+  width: min(70vw, 320px);
+  height: min(70vw, 320px);
+  flex-shrink: 1;
+  box-shadow: var(--shadow-raised);
+}
+
+.sheet__text {
+  width: 100%;
+  text-align: center;
+}
+
+.sheet__title {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.sheet__artist {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--color-text-soft);
+}
+
+.sheet__scrub {
+  width: 100%;
+  max-width: 420px;
+}
+
+.sheet__times {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-soft);
+}
+
+.sheet__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+}
+
+.sheet__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  color: var(--color-text-cream);
+  border-radius: var(--radius-pill);
+  transition: background var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+
+.sheet__btn:hover {
+  background: var(--color-row-hover);
+}
+
+.sheet__btn:active {
+  transform: scale(0.94);
+}
+
+.sheet__btn--play {
+  width: 68px;
+  height: 68px;
+  background: var(--color-surface-alt);
+}
+
+.sheet__btn--play:hover {
+  background: var(--color-surface-alt-hover);
+}
+
+/* ============================================================
+   Short desktop windows
+   A 1366x768 laptop leaves roughly 640px of viewport, which the
+   full device cannot fit. Drop the artwork screen rather than the
+   whole player, so the transport stays exactly where the user
+   expects it and the rail still needs no scrolling.
+   ============================================================ */
+
+@media (min-width: 1025px) and (max-height: 820px) {
+  .device__screen {
+    display: none;
+  }
+}
+
+/* Shorter still (~640px of viewport, a 1366x768 laptop): even the compact
+   device will not fit alongside nine nav rows. Fall all the way back to the
+   bottom bar. `.app` reserves its height as padding so the rail and the
+   content column both stop above it rather than sliding underneath. */
+@media (min-width: 1025px) and (max-height: 690px) {
+  .device {
+    display: none;
+  }
+
+  .mini {
+    display: flex;
+  }
+
+  /* MiniPlayer renders nothing until a track is loaded, so only reserve the
+     bar's height once it is actually there. */
+  .app:has(.mini) {
+    padding-bottom: var(--miniplayer-h);
+  }
+}
+
+/* ============================================================
+   Breakpoint swap — this is the whole point of the split
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  /* The 272px device leaves the drawer; the 64px strip takes over. */
+  .device {
+    display: none;
+  }
+
+  .mini {
+    display: flex;
+  }
+
+  .sheet {
+    display: flex;
+  }
+}

@@ -1,32 +1,47 @@
 import { useState } from 'react';
-import LoginForm from './components/LoginForm';
-import UploadForm from './components/UploadForm';
-import SongList from './components/SongList';
-import Player from './components/Player';
+import { Route, Routes } from 'react-router-dom';
+import AppShell from './components/layout/AppShell';
+import HomePage from './pages/HomePage';
+import StubPage from './pages/StubPage';
+import LoginPage from './pages/LoginPage';
+import UploadPage from './pages/UploadPage';
+import ManagePage from './pages/ManagePage';
+import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
-  const [currentSong, setCurrentSong] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => !!localStorage.getItem('token'),
+  );
 
-  if (!isLoggedIn) {
-    return <LoginForm onLoginSuccess={() => setIsLoggedIn(true)} />;
+  function logout() {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
   }
 
   return (
-    <div className="container">
-      <header className="header">
-        <h1>Mellow Tones</h1>
-        <button className="button button-danger" onClick={() => {
-          localStorage.removeItem('token');
-          setIsLoggedIn(false);
-          setCurrentSong(null);
-        }}>Log out</button>
-      </header>
+    <Routes>
+      <Route path="/" element={<AppShell isLoggedIn={isLoggedIn} />}>
+        <Route index element={<HomePage />} />
 
-      <Player song={currentSong} />
-      <UploadForm onUploaded={() => setRefreshKey(k => k + 1)} />
-      <SongList refreshKey={refreshKey} onPlay={setCurrentSong} />
-    </div>
+        {/* Browsing is public: GET /songs and the stream endpoint carry no
+            auth dependency, so the shell renders signed out. */}
+        <Route path="discover" element={<StubPage title="Discover" />} />
+        <Route path="library" element={<StubPage title="Library" />} />
+        <Route path="library/downloads" element={<StubPage title="Your Downloads" />} />
+        <Route path="library/liked" element={<StubPage title="Liked Songs" />} />
+        <Route path="library/artists" element={<StubPage title="Favorite Artist" />} />
+        <Route path="create" element={<StubPage title="Create" />} />
+
+        <Route path="create/manage" element={<ManagePage />} />
+        <Route path="create/upload" element={<UploadPage isLoggedIn={isLoggedIn} />} />
+        <Route path="login" element={<LoginPage onLogin={() => setIsLoggedIn(true)} />} />
+        <Route path="settings" element={<SettingsPage onLogout={logout} />} />
+
+        <Route
+          path="*"
+          element={<StubPage title="Not found" blurb="That page does not exist." />}
+        />
+      </Route>
+    </Routes>
   );
 }

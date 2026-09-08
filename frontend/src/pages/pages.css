@@ -1,0 +1,235 @@
+/* ============================================================
+   Pages + form controls
+   Class names (.card, .button, .error…) are carried over from the
+   original frontend so the working form components did not have to
+   be rewritten — only their look moves to the new palette.
+   ============================================================ */
+
+.page {
+  max-width: 640px;
+}
+
+.page__title,
+.stub__title {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.page__note,
+.stub__blurb {
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+.page__note {
+  margin-top: var(--sp-4);
+}
+
+.stub {
+  max-width: 640px;
+  padding: var(--sp-7) 0;
+}
+
+/* ============================================================
+   Card / form shell
+   ============================================================ */
+
+.card {
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-5);
+  background: var(--color-sidebar-bg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+}
+
+.card h2 {
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.auth-screen {
+  display: grid;
+  place-items: center;
+  padding: var(--sp-6) 0;
+}
+
+.auth-screen .card {
+  width: 100%;
+  max-width: 400px;
+}
+
+label {
+  display: block;
+  margin-bottom: var(--sp-1);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+input {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-sm);
+  color: var(--color-text-cream);
+  background: var(--color-app-bg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+input:hover {
+  border-color: var(--color-accent);
+}
+
+input:focus-visible {
+  border-color: var(--color-focus);
+}
+
+input[type='file'] {
+  padding: var(--sp-2);
+  cursor: pointer;
+}
+
+input[type='file']::file-selector-button {
+  margin-right: var(--sp-3);
+  padding: var(--sp-1) var(--sp-3);
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-text-cream);
+  background: var(--color-surface);
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.button {
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-5);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease),
+              opacity var(--dur-fast) var(--ease);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-primary {
+  color: var(--color-text-cream);
+  background: var(--color-surface-alt);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: var(--color-surface-alt-hover);
+}
+
+.button-danger {
+  color: #ffc8d4;
+  background: rgba(255, 100, 140, 0.16);
+}
+
+.button-danger:hover:not(:disabled) {
+  background: rgba(255, 100, 140, 0.28);
+}
+
+.linkish {
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.linkish:hover {
+  color: var(--color-text-cream);
+}
+
+/* ============================================================
+   Status messages
+   ============================================================ */
+
+.error {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-sm);
+  color: #ffc8d4;
+  background: rgba(255, 100, 140, 0.14);
+  border-radius: var(--radius-sm);
+}
+
+.hint {
+  margin: calc(var(--sp-2) * -1) 0 var(--sp-4);
+  font-size: var(--fs-xs);
+  color: var(--color-text-soft);
+}
+
+.loading,
+.empty {
+  padding: var(--sp-7);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+/* ============================================================
+   Song list (Manage Songs)
+   ============================================================ */
+
+.song-list {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.song-card {
+  padding: var(--sp-4);
+  background: var(--color-sidebar-bg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-art);
+}
+
+.song-card h3 {
+  margin-bottom: var(--sp-1);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.song-card .artist {
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+.song-card .dur {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent);
+}
+
+.song-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.song-actions .button {
+  flex: 1;
+  padding: var(--sp-2);
+  font-size: var(--fs-xs);
+}
