@@ -44,7 +44,13 @@ export default function PlayerProvider({ children }) {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const onTime = () => setCurrentTime(audio.currentTime);
+    // A seek is asynchronous: between setting currentTime and the `seeked`
+    // event, `timeupdate` still reports the OLD position. Letting that through
+    // yanks the slider back to where the user just dragged from.
+    const onTime = () => {
+      if (!audio.seeking) setCurrentTime(audio.currentTime);
+    };
+    const onSeeked = () => setCurrentTime(audio.currentTime);
     const onMeta = () => {
       if (Number.isFinite(audio.duration)) setDuration(audio.duration);
     };
@@ -53,6 +59,7 @@ export default function PlayerProvider({ children }) {
     const onEnded = () => setIndex((i) => (i + 1 < queue.length ? i + 1 : i));
 
     audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('seeked', onSeeked);
     audio.addEventListener('loadedmetadata', onMeta);
     audio.addEventListener('durationchange', onMeta);
     audio.addEventListener('play', onPlay);
@@ -61,6 +68,7 @@ export default function PlayerProvider({ children }) {
 
     return () => {
       audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('seeked', onSeeked);
       audio.removeEventListener('loadedmetadata', onMeta);
       audio.removeEventListener('durationchange', onMeta);
       audio.removeEventListener('play', onPlay);
@@ -102,8 +110,19 @@ export default function PlayerProvider({ children }) {
   const seek = useCallback((time) => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.currentTime = time;
-    setCurrentTime(time);
+
+    const max = Number.isFinite(audio.duration) ? audio.duration : Infinity;
+    const clamped = Math.min(Math.max(0, time), max);
+    if (!Number.isFinite(clamped)) return;
+
+    try {
+      audio.currentTime = clamped;
+      // Optimistic: `timeupdate` still reports the old position until the
+      // seek completes, and the UI should follow the user, not the buffer.
+      setCurrentTime(clamped);
+    } catch {
+      // Seeking before the element has metadata throws in some browsers.
+    }
   }, []);
 
   const setVolume = useCallback((v) => {

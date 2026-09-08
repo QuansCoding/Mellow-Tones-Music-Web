@@ -67,7 +67,13 @@
   max-width: 400px;
 }
 
-label {
+/* Scoped to form surfaces on purpose. As bare `label` / `input` selectors
+   these hit every input in the app — the search field and all three range
+   scrubbers included, where `min-height: 44px` silently inflated a 17px
+   seek strip into a 44px one that swallowed neighbouring taps. */
+
+.panel label,
+.modal label {
   display: block;
   margin-bottom: var(--sp-1);
   font-size: var(--fs-xs);
@@ -77,7 +83,8 @@ label {
   color: var(--color-accent);
 }
 
-input {
+.panel input,
+.modal input {
   width: 100%;
   min-height: 44px;
   padding: var(--sp-2) var(--sp-3);
@@ -90,20 +97,22 @@ input {
   transition: border-color var(--dur-fast) var(--ease);
 }
 
-input:hover {
+.panel input:hover,
+.modal input:hover {
   border-color: var(--color-accent);
 }
 
-input:focus-visible {
+.panel input:focus-visible,
+.modal input:focus-visible {
   border-color: var(--color-focus);
 }
 
-input[type='file'] {
+.panel input[type='file'] {
   padding: var(--sp-2);
   cursor: pointer;
 }
 
-input[type='file']::file-selector-button {
+.panel input[type='file']::file-selector-button {
   margin-right: var(--sp-3);
   padding: var(--sp-1) var(--sp-3);
   font: inherit;

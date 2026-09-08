@@ -1,4 +1,5 @@
 import { usePlayer } from './playerContext';
+import { useScrubber } from './useScrubber';
 import { formatTime } from '../../utils/format';
 import Artwork from '../common/Artwork';
 import {
@@ -20,6 +21,7 @@ export default function SidebarPlayer() {
     toggle, next, prev, seek, nudgeVolume, hasTrack,
   } = usePlayer();
 
+  const scrubber = useScrubber({ currentTime, onSeek: seek });
   const total = duration || current?.duration_sec || 0;
 
   return (
@@ -39,14 +41,16 @@ export default function SidebarPlayer() {
         min={0}
         max={total || 1}
         step={0.5}
-        value={Math.min(currentTime, total || 1)}
         disabled={!hasTrack}
-        onChange={(e) => seek(Number(e.target.value))}
-        style={{ '--progress': `${total ? (currentTime / total) * 100 : 0}%` }}
+        aria-valuetext={`${formatTime(scrubber.value)} of ${formatTime(total)}`}
+        {...scrubber.inputProps}
+        value={Math.min(scrubber.value, total || 1)}
+        style={{ '--progress': `${total ? (scrubber.value / total) * 100 : 0}%` }}
       />
 
       <div className="device__meta">
-        <span className="device__time">{formatTime(currentTime)}</span>
+        {/* Shows the drag target while scrubbing, the real position otherwise. */}
+        <span className="device__time">{formatTime(scrubber.value)}</span>
         <span className="device__track">
           <span className="device__song">{current?.title ?? 'Song Name'}</span>
           <span className="device__artist">{current?.artist ?? 'Artist Name'}</span>

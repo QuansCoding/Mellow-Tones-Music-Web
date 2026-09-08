@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { usePlayer } from './playerContext';
+import { useScrubber } from './useScrubber';
 import { formatTime } from '../../utils/format';
 import Artwork from '../common/Artwork';
 import {
@@ -18,6 +19,8 @@ export default function NowPlayingSheet() {
     current, isPlaying, currentTime, duration, sheetOpen,
     toggle, next, prev, seek, closeSheet,
   } = usePlayer();
+
+  const scrubber = useScrubber({ currentTime, onSeek: seek });
 
   useEffect(() => {
     if (!sheetOpen) return;
@@ -72,12 +75,13 @@ export default function NowPlayingSheet() {
           min={0}
           max={total || 1}
           step={0.5}
-          value={Math.min(currentTime, total || 1)}
-          onChange={(e) => seek(Number(e.target.value))}
-          style={{ '--progress': `${total ? (currentTime / total) * 100 : 0}%` }}
+          aria-valuetext={`${formatTime(scrubber.value)} of ${formatTime(total)}`}
+          {...scrubber.inputProps}
+          value={Math.min(scrubber.value, total || 1)}
+          style={{ '--progress': `${total ? (scrubber.value / total) * 100 : 0}%` }}
         />
         <div className="sheet__times">
-          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(scrubber.value)}</span>
           <span>{formatTime(total)}</span>
         </div>
       </div>
