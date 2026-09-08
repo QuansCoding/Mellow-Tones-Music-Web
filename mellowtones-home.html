@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MellowTones — Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Autour+One&family=Inter:wght@500&family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     Design tokens
+     ============================================================ */
+  :root {
+    /* Colours (composited to match the Figma render) */
+    --color-app-bg: #271830;
+    --color-sidebar-bg: #412652;
+    --color-surface: #653872;               /* cards, placeholder artwork */
+    --color-surface-alt: #82468d;            /* player screen + controls   */
+    --color-search-bg: rgba(101, 56, 114, 0.45);
+    --color-signin-bg: rgba(255, 131, 253, 0.19);
+
+    --color-accent: #9d5fb5;                 /* section titles, column heads, placeholder text */
+    --color-text-soft: #b181c2;              /* navigation, player + about-song copy */
+    --color-text-pink: #dcbebe;              /* trending list + card copy */
+    --color-text-cream: #e4c5ca;             /* logo, "Show All", "Sign-in" */
+    --color-icon: #fffbc9;                   /* search map-pin */
+
+    /* Typography */
+    --font-primary: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+    --font-ui: 'Inter', 'Segoe UI', Arial, sans-serif;
+    --font-logo: 'Autour One', 'Montserrat', cursive;
+
+    --fs-time: 5px;
+    --fs-3xs: 7px;
+    --fs-2xs: 8px;
+    --fs-xs: 10px;
+    --fs-sm: 11px;
+    --fs-md: 12px;
+    --fs-lg: 13px;
+    --fs-xl: 14px;
+
+    /* Spacing */
+    --sp-2: 2px;
+    --sp-4: 4px;
+    --sp-6: 6px;
+    --sp-9: 9px;
+    --sp-14: 14px;
+    --sp-16: 16px;
+    --sp-18: 18px;
+    --sp-24: 24px;
+    --sp-26: 26px;
+    --sp-37: 37px;
+    --sp-52: 52px;
+
+    /* Radius */
+    --radius-sm: 8px;
+    --radius-md: 15px;
+    --radius-art: 10px;
+    --radius-pill: 20px;
+  }
+
+  /* ============================================================
+     Reset / base
+     ============================================================ */
+  *,
+  *::before,
+  *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: var(--font-primary);
+    background: var(--color-app-bg);
+    color: var(--color-text-pink);
+    line-height: normal;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  img { display: block; max-width: 100%; }
+  ul { list-style: none; }
+  a { text-decoration: none; color: inherit; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+  /* ============================================================
+     App shell
+     ============================================================ */
+  .app {
+    display: flex;
+    max-width: 1379px;
+    min-height: 832px;
+    margin: 0 auto;
+    background: var(--color-app-bg);
+  }
+
+  /* ============================================================
+     Sidebar
+     ============================================================ */
+  .sidebar {
+    position: relative;
+    flex-shrink: 0;
+    width: 178px;
+    min-height: 832px;
+    background: var(--color-sidebar-bg);
+  }
+
+  /* --- Brand ------------------------------------------------- */
+  .brand {
+    position: absolute;
+    top: 9px;
+    left: 13px;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+  }
+
+  .brand__mark {
+    position: relative;
+    flex-shrink: 0;
+    width: 26px;
+    height: 28px;
+  }
+
+  .brand__z {
+    position: absolute;
+    font-family: var(--font-logo);
+    font-size: var(--fs-xs);
+    line-height: 1;
+    letter-spacing: 2px;
+    color: var(--color-text-cream);
+  }
+
+  .brand__z--1 { left: 0;    top: 13px; transform: rotate(-24.79deg); }
+  .brand__z--2 { left: 10px; top: 12px; transform: rotate(19.66deg); }
+  .brand__z--3 { left: 0;    top: 0;    transform: rotate(-55.62deg); }
+
+  .brand__name {
+    margin-top: 9px;
+    font-family: var(--font-logo);
+    font-size: var(--fs-lg);
+    letter-spacing: 2px;
+    white-space: nowrap;
+    color: var(--color-text-cream);
+  }
+
+  /* --- Navigation ------------------------------------------- */
+  .nav {
+    position: absolute;
+    top: 55px;
+    left: 18px;
+    right: 0;
+  }
+
+  .nav__toggle {
+    display: none;
+    width: 32px;
+    height: 32px;
+    padding: 8px 6px;
+    flex-direction: column;
+    justify-content: space-between;
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+  }
+
+  .nav__toggle-bar {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: var(--color-text-soft);
+    border-radius: 2px;
+  }
+
+  .nav__list {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+
+  .nav__link {
+    display: block;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    color: var(--color-text-soft);
+  }
+
+  .nav__link--section { font-size: var(--fs-xl); }
+  .nav__link--sub { font-size: var(--fs-md); padding-left: 28px; }
+
+  /* --- About the song ------------------------------------- */
+  .about {
+    position: absolute;
+    top: 328px;
+    left: 18px;
+    width: 141px;
+  }
+
+  .about__title {
+    width: 130px;
+    margin: 0 auto;
+    height: 15.6px;
+    line-height: 15.6px;
+    text-align: center;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-xs);
+    color: var(--color-text-soft);
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+  }
+
+  .about__body {
+    margin-top: 4px;
+    height: 103.7px;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+  }
+
+  .about__text {
+    padding: 7px 9px;
+    font-family: var(--font-primary);
+    font-weight: 500;
+    font-size: var(--fs-3xs);
+    color: var(--color-text-soft);
+  }
+
+  /* --- Music player -------------------------------------- */
+  .player {
+    position: absolute;
+    top: 465px;
+    left: 14px;
+    width: 149px;
+    height: 272px;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+  }
+
+  .player__screen {
+    position: absolute;
+    top: 14px;
+    left: 15px;
+    width: 119px;
+    height: 96px;
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-sm);
+  }
+
+  .player__add {
+    position: absolute;
+    top: 7px;
+    left: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 13px;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+  }
+
+  .player__add svg { display: block; width: 9px; height: 9px; }
+
+  .player__progress {
+    position: absolute;
+    top: 116px;
+    left: 15px;
+    width: 119px;
+    height: 5px;
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-pill);
+  }
+
+  .player__meta {
+    position: absolute;
+    top: 119px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .player__time {
+    width: 30px;
+    text-align: center;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-time);
+    line-height: 1;
+    color: var(--color-text-soft);
+  }
+
+  .player__track {
+    flex: 1;
+    text-align: center;
+  }
+
+  .player__song {
+    display: block;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-xs);
+    line-height: 1;
+    color: var(--color-text-soft);
+  }
+
+  .player__artist {
+    display: block;
+    margin-top: 6px;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-3xs);
+    line-height: 1;
+    color: var(--color-text-soft);
+  }
+
+  .player__controls { display: contents; }
+
+  .player__btn {
+    position: absolute;
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-sm);
+  }
+
+  .player__btn--prev { left: 17px;  top: 203px; width: 31px; height: 18px; }
+  .player__btn--up   { left: 63px;  top: 178px; width: 24px; height: 18px; }
+  .player__btn--play { left: 63px;  top: 203px; width: 24px; height: 18px; }
+  .player__btn--down { left: 63px;  top: 228px; width: 24px; height: 18px; }
+  .player__btn--next { left: 102px; top: 203px; width: 32px; height: 18px; }
+
+  /* --- Sign in ------------------------------------------- */
+  .signin {
+    position: absolute;
+    top: 779px;
+    left: 14px;
+    width: 149px;
+    height: 43px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: var(--fs-xs);
+    color: var(--color-text-cream);
+    background: var(--color-signin-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  /* ============================================================
+     Content column
+     ============================================================ */
+  .content {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 37px 40px 52px;
+  }
+
+  /* --- Top bar ------------------------------------------- */
+  .topbar {
+    display: flex;
+    align-items: flex-start;
+    margin-right: -37px;
+  }
+
+  .search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 550px;
+    height: 33px;
+    margin-left: 6px;
+    background: var(--color-search-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .search__icon {
+    position: absolute;
+    top: 8px;
+    left: 6px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .search__icon svg { display: block; width: 16px; height: 16px; }
+
+  .search__input {
+    width: 100%;
+    height: 100%;
+    padding: 0 12px 0 35px;
+    border: 0;
+    background: transparent;
+    outline: none;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-xs);
+    color: var(--color-accent);
+  }
+
+  .search__input::placeholder { color: var(--color-accent); opacity: 1; }
+
+  .topbar__avatar {
+    width: 49px;
+    height: 49px;
+    margin-left: auto;
+    margin-top: -7px;
+  }
+
+  /* --- Sections ----------------------------------------- */
+  .main { margin-top: 48px; }
+
+  .section--artists { margin-top: 20px; }
+  .section--trending { margin-top: 31px; margin-left: 123px; }
+
+  .section__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .section__title {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-md);
+    color: var(--color-accent);
+  }
+
+  .section__link {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-xs);
+    color: var(--color-text-cream);
+  }
+
+  /* --- Album grid -------------------------------------- */
+  .albums__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--sp-24);
+  }
+
+  .album-card {
+    position: relative;
+    height: 125px;
+    background: var(--color-surface);
+    border-radius: var(--radius-art);
+    overflow: hidden;
+  }
+
+  .album-card__art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .album-card__info {
+    position: absolute;
+    left: 13px;
+    bottom: 14px;
+  }
+
+  .album-card__name {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-sm);
+    color: var(--color-text-pink);
+  }
+
+  .album-card__count {
+    margin-top: 3px;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-2xs);
+    color: var(--color-text-pink);
+  }
+
+  /* --- Artist grid ------------------------------------ */
+  .artists__grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--sp-26);
+  }
+
+  .artist-card {
+    position: relative;
+    height: 125px;
+    background: var(--color-surface);
+    border-radius: var(--radius-art);
+    overflow: hidden;
+  }
+
+  .artist-card__art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .artist-card__name {
+    position: absolute;
+    left: 19px;
+    bottom: 15px;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-lg);
+    color: var(--color-text-pink);
+  }
+
+  /* --- Trending table -------------------------------- */
+  .section--trending .section__title { display: block; margin-bottom: 17px; }
+
+  .trending__scroll {
+    max-width: 862px;
+    overflow-x: auto;
+  }
+
+  .trending__table { min-width: 862px; }
+
+  .trending__row {
+    display: grid;
+    grid-template-columns: 29px 66px 204px 222px 196px 94px 1fr;
+    align-items: center;
+    min-height: 57px;
+  }
+
+  .trending__row--head {
+    min-height: 0;
+    margin-bottom: 30px;
+  }
+
+  .trending__col {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-xs);
+    color: var(--color-accent);
+  }
+
+  .trending__col--title  { grid-column: 2; padding-left: 6px; }
+  .trending__col--album  { grid-column: 4; }
+  .trending__col--plays  { grid-column: 5; }
+  .trending__col--length { grid-column: 7; }
+
+  .trending__rank {
+    grid-column: 1;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-xs);
+    color: var(--color-text-pink);
+  }
+
+  .trending__art {
+    grid-column: 2;
+    width: 42px;
+    height: 40px;
+    border-radius: var(--radius-art);
+    object-fit: cover;
+  }
+
+  .trending__song { grid-column: 3; align-self: center; }
+
+  .trending__title {
+    display: block;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-md);
+    color: var(--color-text-pink);
+  }
+
+  .trending__artist {
+    display: block;
+    margin-top: 2px;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-xs);
+    color: var(--color-text-pink);
+  }
+
+  .trending__album,
+  .trending__plays,
+  .trending__length {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--fs-xs);
+    color: var(--color-text-pink);
+  }
+
+  .trending__album  { grid-column: 4; }
+  .trending__plays  { grid-column: 5; }
+  .trending__length { grid-column: 7; }
+
+  .trending__like {
+    grid-column: 6;
+    width: 16px;
+    height: 16px;
+  }
+
+  .trending__like svg { display: block; width: 16px; height: 16px; }
+
+  /* ============================================================
+     Tablet — max-width: 1024px
+     ============================================================ */
+  @media (max-width: 1024px) {
+    .app {
+      flex-direction: column;
+      max-width: 100%;
+      min-height: 0;
+    }
+
+    .sidebar {
+      position: static;
+      width: 100%;
+      min-height: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .brand,
+    .nav,
+    .about,
+    .signin { position: static; top: auto; left: auto; }
+
+    .player { position: relative; top: auto; left: auto; }
+
+    .nav { width: 100%; }
+
+    .nav__toggle { display: flex; }
+
+    .nav__list {
+      max-height: 0;
+      margin-top: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .nav--open .nav__list {
+      max-height: 420px;
+      margin-top: 12px;
+    }
+
+    .about { width: 141px; }
+
+    .player { align-self: flex-start; }
+
+    .signin { width: 149px; }
+
+    .content { padding: 16px; }
+
+    .topbar {
+      margin-right: 0;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .search { width: 100%; margin-left: 0; }
+
+    .topbar__avatar { margin-top: 0; }
+
+    .main { margin-top: 24px; }
+
+    .albums__grid { grid-template-columns: repeat(4, 1fr); }
+    .artists__grid { grid-template-columns: repeat(3, 1fr); }
+
+    .section--trending { margin-left: 0; }
+    .trending__scroll { max-width: 100%; }
+  }
+
+  /* ============================================================
+     Mobile — max-width: 768px
+     ============================================================ */
+  @media (max-width: 768px) {
+    .albums__grid { grid-template-columns: repeat(2, 1fr); }
+    .artists__grid { grid-template-columns: repeat(2, 1fr); }
+
+    .section__head { margin-bottom: 14px; }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- ===================== Sidebar ===================== -->
+    <aside class="sidebar">
+
+      <a class="brand" href="#" aria-label="MellowTones home">
+        <span class="brand__mark" aria-hidden="true">
+          <span class="brand__z brand__z--3">Z</span>
+          <span class="brand__z brand__z--1">Z</span>
+          <span class="brand__z brand__z--2">Z</span>
+        </span>
+        <span class="brand__name">MellowTones</span>
+      </a>
+
+      <nav class="nav" id="site-nav" aria-label="Primary">
+        <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="nav-list" aria-label="Toggle navigation menu">
+          <span class="nav__toggle-bar"></span>
+          <span class="nav__toggle-bar"></span>
+          <span class="nav__toggle-bar"></span>
+        </button>
+        <ul class="nav__list" id="nav-list">
+          <li><a class="nav__link nav__link--section" href="#">Home</a></li>
+          <li><a class="nav__link nav__link--section" href="#">Discover</a></li>
+          <li><a class="nav__link nav__link--section" href="#">Library</a></li>
+          <li><a class="nav__link nav__link--sub" href="#">Your Downloads</a></li>
+          <li><a class="nav__link nav__link--sub" href="#">Liked Songs</a></li>
+          <li><a class="nav__link nav__link--sub" href="#">Favorite Artist</a></li>
+          <li><a class="nav__link nav__link--section" href="#">Create</a></li>
+          <li><a class="nav__link nav__link--sub" href="#">Manage Songs</a></li>
+          <li><a class="nav__link nav__link--sub" href="#">Upload Song</a></li>
+        </ul>
+      </nav>
+
+      <section class="about" aria-label="About the song">
+        <p class="about__title">About The Song</p>
+        <div class="about__body">
+          <p class="about__text">Details about the song ...</p>
+        </div>
+      </section>
+
+      <section class="player" aria-label="Music player">
+        <div class="player__screen">
+          <button class="player__add" type="button" aria-label="Add song">
+            <svg viewBox="0 0 10 10" aria-hidden="true">
+              <path d="M5 1V9M1 5H9" stroke="#f3e3e6" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="player__progress"></div>
+
+        <div class="player__meta">
+          <span class="player__time">0:00</span>
+          <span class="player__track">
+            <span class="player__song">Song Name</span>
+            <span class="player__artist">Artist Name</span>
+          </span>
+          <span class="player__time">0:00</span>
+        </div>
+
+        <div class="player__controls">
+          <button class="player__btn player__btn--prev" type="button" aria-label="Previous track"></button>
+          <button class="player__btn player__btn--up" type="button" aria-label="Volume up"></button>
+          <button class="player__btn player__btn--play" type="button" aria-label="Play"></button>
+          <button class="player__btn player__btn--down" type="button" aria-label="Volume down"></button>
+          <button class="player__btn player__btn--next" type="button" aria-label="Next track"></button>
+        </div>
+      </section>
+
+      <button class="signin" type="button">Sign-in</button>
+
+    </aside>
+
+    <!-- ===================== Content ===================== -->
+    <div class="content">
+
+      <header class="topbar">
+        <form class="search" role="search" action="#" method="get">
+          <span class="search__icon" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8.40067 14.5327C9.64067 13.462 13.3333 9.99533 13.3333 6.66667C13.3333 5.25218 12.7714 3.89562 11.7712 2.89543C10.771 1.89524 9.41449 1.33333 8 1.33333C6.58551 1.33333 5.22896 1.89524 4.22876 2.89543C3.22857 3.89562 2.66667 5.25218 2.66667 6.66667C2.66667 9.99533 6.35933 13.462 7.59933 14.5327C7.71485 14.6195 7.85547 14.6665 8 14.6665C8.14453 14.6665 8.28515 14.6195 8.40067 14.5327Z" stroke="#FFFBC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 8.66667C9.10457 8.66667 10 7.77124 10 6.66667C10 5.5621 9.10457 4.66667 8 4.66667C6.89543 4.66667 6 5.5621 6 6.66667C6 7.77124 6.89543 8.66667 8 8.66667Z" stroke="#FFFBC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <input class="search__input" type="search" name="q" placeholder="Search for song name or artist ..." aria-label="Search for song name or artist">
+        </form>
+
+        <img class="topbar__avatar" alt="User profile picture"
+             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 49 49'%3E%3Cpath d='M23.472 0C37.5707 0 49 11.5394 49 25.6381 49 38.5405 38.5405 49 25.6381 49H23.472C10.5696 49 0 38.5405 0 25.6381V23.472C0 10.5088 10.5088 0 23.472 0Z' fill='%23653872'/%3E%3C/svg%3E">
+      </header>
+
+      <main class="main">
+
+        <!-- Popular Albums -->
+        <section class="section section--albums" aria-labelledby="albums-title">
+          <header class="section__head">
+            <h2 class="section__title" id="albums-title">Popular Albums</h2>
+            <a class="section__link" href="#">Show All</a>
+          </header>
+          <ul class="albums__grid">
+            <li class="album-card">
+              <img class="album-card__art" alt="Album artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='137' height='125' preserveAspectRatio='none'%3E%3Crect width='137' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <div class="album-card__info">
+                <p class="album-card__name">Album</p>
+                <p class="album-card__count"># songs</p>
+              </div>
+            </li>
+            <li class="album-card">
+              <img class="album-card__art" alt="Album artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='137' height='125' preserveAspectRatio='none'%3E%3Crect width='137' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <div class="album-card__info">
+                <p class="album-card__name">Album</p>
+                <p class="album-card__count"># songs</p>
+              </div>
+            </li>
+            <li class="album-card">
+              <img class="album-card__art" alt="Album artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='137' height='125' preserveAspectRatio='none'%3E%3Crect width='137' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <div class="album-card__info">
+                <p class="album-card__name">Album</p>
+                <p class="album-card__count"># songs</p>
+              </div>
+            </li>
+            <li class="album-card">
+              <img class="album-card__art" alt="Album artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='137' height='125' preserveAspectRatio='none'%3E%3Crect width='137' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <div class="album-card__info">
+                <p class="album-card__name">Album</p>
+                <p class="album-card__count"># songs</p>
+              </div>
+            </li>
+            <li class="album-card">
+              <img class="album-card__art" alt="Album artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='137' height='125' preserveAspectRatio='none'%3E%3Crect width='137' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <div class="album-card__info">
+                <p class="album-card__name">Album</p>
+                <p class="album-card__count"># songs</p>
+              </div>
+            </li>
+            <li class="album-card">
+              <img class="album-card__art" alt="Album artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='137' height='125' preserveAspectRatio='none'%3E%3Crect width='137' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <div class="album-card__info">
+                <p class="album-card__name">Album</p>
+                <p class="album-card__count"># songs</p>
+              </div>
+            </li>
+            <li class="album-card">
+              <img class="album-card__art" alt="Album artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='137' height='125' preserveAspectRatio='none'%3E%3Crect width='137' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <div class="album-card__info">
+                <p class="album-card__name">Album</p>
+                <p class="album-card__count"># songs</p>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Popular Artists -->
+        <section class="section section--artists" aria-labelledby="artists-title">
+          <header class="section__head">
+            <h2 class="section__title" id="artists-title">Popular Artists</h2>
+            <a class="section__link" href="#">Show All</a>
+          </header>
+          <ul class="artists__grid">
+            <li class="artist-card">
+              <img class="artist-card__art" alt="Artist photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='125' preserveAspectRatio='none'%3E%3Crect width='200' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <p class="artist-card__name">Artist</p>
+            </li>
+            <li class="artist-card">
+              <img class="artist-card__art" alt="Artist photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='125' preserveAspectRatio='none'%3E%3Crect width='200' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <p class="artist-card__name">Artist</p>
+            </li>
+            <li class="artist-card">
+              <img class="artist-card__art" alt="Artist photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='125' preserveAspectRatio='none'%3E%3Crect width='200' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <p class="artist-card__name">Artist</p>
+            </li>
+            <li class="artist-card">
+              <img class="artist-card__art" alt="Artist photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='125' preserveAspectRatio='none'%3E%3Crect width='200' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <p class="artist-card__name">Artist</p>
+            </li>
+            <li class="artist-card">
+              <img class="artist-card__art" alt="Artist photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='125' preserveAspectRatio='none'%3E%3Crect width='200' height='125' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+              <p class="artist-card__name">Artist</p>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Trending Today -->
+        <section class="section section--trending" aria-labelledby="trending-title">
+          <h2 class="section__title" id="trending-title">Trending Today</h2>
+          <div class="trending__scroll">
+            <div class="trending__table" role="table" aria-label="Trending today">
+
+              <div class="trending__row trending__row--head" role="row">
+                <span class="trending__col trending__col--title" role="columnheader">TITLE</span>
+                <span class="trending__col trending__col--album" role="columnheader">ALBUM</span>
+                <span class="trending__col trending__col--plays" role="columnheader">PLAYS</span>
+                <span class="trending__col trending__col--length" role="columnheader">LENGTH</span>
+              </div>
+
+              <div class="trending__row" role="row">
+                <span class="trending__rank" role="cell">1</span>
+                <img class="trending__art" alt="Song artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='40' preserveAspectRatio='none'%3E%3Crect width='42' height='40' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+                <span class="trending__song" role="cell">
+                  <span class="trending__title">Title</span>
+                  <span class="trending__artist">Artist</span>
+                </span>
+                <span class="trending__album" role="cell">Album Name</span>
+                <span class="trending__plays" role="cell">Total Plays</span>
+                <span class="trending__like trending__like--on" role="cell">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 13.6 6.84 12.55C3.28 9.36 1 7.28 1 4.73 1 2.66 2.66 1 4.73 1 5.9 1 7.02 1.54 7.75 2.4L8 2.68 8.25 2.4C8.98 1.54 10.1 1 11.27 1 13.34 1 15 2.66 15 4.73 15 7.28 12.72 9.36 9.16 12.55Z" fill="#9d5fb5"/>
+                  </svg>
+                </span>
+                <span class="trending__length" role="cell">Length</span>
+              </div>
+
+              <div class="trending__row" role="row">
+                <span class="trending__rank" role="cell">2</span>
+                <img class="trending__art" alt="Song artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='40' preserveAspectRatio='none'%3E%3Crect width='42' height='40' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+                <span class="trending__song" role="cell">
+                  <span class="trending__title">Title</span>
+                  <span class="trending__artist">Artist</span>
+                </span>
+                <span class="trending__album" role="cell">Album Name</span>
+                <span class="trending__plays" role="cell">Total Plays</span>
+                <span class="trending__like" role="cell">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 13.6 6.84 12.55C3.28 9.36 1 7.28 1 4.73 1 2.66 2.66 1 4.73 1 5.9 1 7.02 1.54 7.75 2.4L8 2.68 8.25 2.4C8.98 1.54 10.1 1 11.27 1 13.34 1 15 2.66 15 4.73 15 7.28 12.72 9.36 9.16 12.55Z" fill="none" stroke="#9d5fb5" stroke-width="1.3"/>
+                  </svg>
+                </span>
+                <span class="trending__length" role="cell">Length</span>
+              </div>
+
+              <div class="trending__row" role="row">
+                <span class="trending__rank" role="cell">3</span>
+                <img class="trending__art" alt="Song artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='40' preserveAspectRatio='none'%3E%3Crect width='42' height='40' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+                <span class="trending__song" role="cell">
+                  <span class="trending__title">Title</span>
+                  <span class="trending__artist">Artist , Artist2</span>
+                </span>
+                <span class="trending__album" role="cell">Album Name</span>
+                <span class="trending__plays" role="cell">Total Plays</span>
+                <span class="trending__like trending__like--on" role="cell">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 13.6 6.84 12.55C3.28 9.36 1 7.28 1 4.73 1 2.66 2.66 1 4.73 1 5.9 1 7.02 1.54 7.75 2.4L8 2.68 8.25 2.4C8.98 1.54 10.1 1 11.27 1 13.34 1 15 2.66 15 4.73 15 7.28 12.72 9.36 9.16 12.55Z" fill="#9d5fb5"/>
+                  </svg>
+                </span>
+                <span class="trending__length" role="cell">Length</span>
+              </div>
+
+              <div class="trending__row" role="row">
+                <span class="trending__rank" role="cell">4</span>
+                <img class="trending__art" alt="Song artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='40' preserveAspectRatio='none'%3E%3Crect width='42' height='40' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+                <span class="trending__song" role="cell">
+                  <span class="trending__title">Title</span>
+                  <span class="trending__artist">Artist</span>
+                </span>
+                <span class="trending__album" role="cell">Album Name</span>
+                <span class="trending__plays" role="cell">Total Plays</span>
+                <span class="trending__like" role="cell">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 13.6 6.84 12.55C3.28 9.36 1 7.28 1 4.73 1 2.66 2.66 1 4.73 1 5.9 1 7.02 1.54 7.75 2.4L8 2.68 8.25 2.4C8.98 1.54 10.1 1 11.27 1 13.34 1 15 2.66 15 4.73 15 7.28 12.72 9.36 9.16 12.55Z" fill="none" stroke="#9d5fb5" stroke-width="1.3"/>
+                  </svg>
+                </span>
+                <span class="trending__length" role="cell">Length</span>
+              </div>
+
+              <div class="trending__row" role="row">
+                <span class="trending__rank" role="cell">5</span>
+                <img class="trending__art" alt="Song artwork" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='40' preserveAspectRatio='none'%3E%3Crect width='42' height='40' rx='10' fill='%23653872'/%3E%3C/svg%3E">
+                <span class="trending__song" role="cell">
+                  <span class="trending__title">Title</span>
+                  <span class="trending__artist">Artist, Artist2</span>
+                </span>
+                <span class="trending__album" role="cell">Album Name</span>
+                <span class="trending__plays" role="cell">Total Plays</span>
+                <span class="trending__like" role="cell">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 13.6 6.84 12.55C3.28 9.36 1 7.28 1 4.73 1 2.66 2.66 1 4.73 1 5.9 1 7.02 1.54 7.75 2.4L8 2.68 8.25 2.4C8.98 1.54 10.1 1 11.27 1 13.34 1 15 2.66 15 4.73 15 7.28 12.72 9.36 9.16 12.55Z" fill="none" stroke="#9d5fb5" stroke-width="1.3"/>
+                  </svg>
+                </span>
+                <span class="trending__length" role="cell">Length</span>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var nav = document.getElementById('site-nav');
+      var toggle = nav.querySelector('.nav__toggle');
+
+      toggle.addEventListener('click', function () {
+        var isOpen = nav.classList.toggle('nav--open');
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+    })();
+  </script>
+</body>
+</html>

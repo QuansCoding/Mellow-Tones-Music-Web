@@ -29,7 +29,7 @@ export default function LoginForm({ onLoginSuccess }) {
 
   return (
     <div className="auth-screen">
-      <form className="card" onSubmit={handleSubmit}>
+      <form className="panel" onSubmit={handleSubmit}>
         <h2>{mode === 'login' ? 'Log in' : 'Create account'}</h2>
         {error && <div className="error">{error}</div>}
 

@@ -1,0 +1,444 @@
+/* ============================================================
+   App shell — chrome pinned to the viewport, content scrolls
+   ============================================================ */
+
+.app {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-app-bg);
+}
+
+.app__column {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+/* The only scroll container on desktop. Keeping it here — rather than on the
+   page — is what pins the sidebar and search bar in place. */
+.app__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-6) var(--content-pad-x) var(--sp-8);
+  scrollbar-gutter: stable;
+}
+
+.app__scrim {
+  display: none;
+}
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: var(--sidebar-w);
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-sidebar-bg);
+}
+
+.sidebar__inner {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--sp-3);
+  /* Only engages on unusually short windows — the rail is sized to fit. */
+  overflow-y: auto;
+  padding: var(--sp-4);
+}
+
+/* `margin-top: auto` drops it to the foot of the rail when there is slack,
+   and resolves to 0 when there isn't — so it never overlaps the player. */
+.sidebar__account {
+  flex-shrink: 0;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-4);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-cream);
+  background: var(--color-signin-bg);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.sidebar__account:hover {
+  background: var(--color-signin-bg-hover);
+}
+
+/* ============================================================
+   Brand
+   ============================================================ */
+
+.brand {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+}
+
+.brand__mark {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 36px;
+}
+
+.brand__z {
+  position: absolute;
+  font-family: var(--font-logo);
+  font-size: var(--fs-sm);
+  line-height: 1;
+  letter-spacing: 2px;
+  color: var(--color-text-cream);
+}
+
+.brand__z--1 { left: 0;    top: 17px; transform: rotate(-24.79deg); }
+.brand__z--2 { left: 13px; top: 16px; transform: rotate(19.66deg); }
+.brand__z--3 { left: 0;    top: 0;    transform: rotate(-55.62deg); }
+
+.brand__name {
+  margin-top: 11px;
+  font-family: var(--font-logo);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  color: var(--color-text-cream);
+}
+
+.brand--topbar {
+  display: none;
+}
+
+/* ============================================================
+   Navigation
+   ============================================================ */
+
+.nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav__sublist {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav__link {
+  position: relative;
+  display: block;
+  font-weight: 700;
+  color: var(--color-text-soft);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease);
+}
+
+/* Comfortable hit areas — the Figma's rows are bare text, ~13px tall.
+   17px x 1.2 + 10px = 30px tall; 14px x 1.2 + 8px = 25px. Both clear the
+   24px WCAG 2.5.8 minimum while keeping the rail inside one viewport. */
+.nav__link--section {
+  font-size: var(--fs-xl);
+  padding: 5px var(--sp-3);
+}
+
+.nav__link--sub {
+  font-size: var(--fs-md);
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-6);
+}
+
+.nav__link:hover {
+  color: var(--color-text-cream);
+  background: var(--color-row-hover);
+}
+
+/* Current-page state — absent from the Figma, essential in a real app. */
+.nav__link--current {
+  color: var(--color-text-cream);
+  background: var(--color-row-hover);
+}
+
+.nav__link--current::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 3px;
+  height: 1.1em;
+  transform: translateY(-50%);
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+}
+
+/* ============================================================
+   About The Song
+   ============================================================ */
+
+.about {
+  flex-shrink: 0;
+}
+
+/* Collapsed by default; the pill is the disclosure control. */
+.about__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-height: 26px;
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-text-soft);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  list-style: none;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.about__title::-webkit-details-marker {
+  display: none;
+}
+
+.about__title:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-cream);
+}
+
+.about__chevron {
+  display: flex;
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.about[open] .about__chevron {
+  transform: rotate(180deg);
+}
+
+.about__body {
+  margin-top: var(--sp-1);
+  padding: var(--sp-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.about__text {
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--color-text-soft);
+}
+
+.about__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.about__fact dt {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-accent);
+}
+
+.about__fact dd {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--color-text-cream);
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   Top bar
+   ============================================================ */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+  padding: var(--sp-3) var(--content-pad-x);
+  background: var(--color-app-bg);
+}
+
+.topbar__menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--color-text-soft);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.topbar__menu:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-cream);
+}
+
+/* --- Search ---------------------------------------------------------- */
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* Holds the Figma's proportion on normal screens without stretching to
+     an absurd width on an ultrawide monitor. */
+  flex: 0 1 550px;
+  height: 40px;
+}
+
+.search__icon {
+  position: absolute;
+  left: var(--sp-3);
+  display: flex;
+  color: var(--color-icon);
+  pointer-events: none;
+}
+
+.search__input {
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--sp-3) 0 var(--sp-8);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-cream);
+  background: var(--color-search-bg);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.search__input::placeholder {
+  color: var(--color-accent);
+  opacity: 1;
+  font-weight: 600;
+}
+
+.search__input:hover {
+  border-color: var(--color-hairline);
+}
+
+.search__input:focus-visible {
+  border-color: var(--color-focus);
+  outline: none;
+}
+
+/* Chrome's default search clear button is invisible on this palette. */
+.search__input::-webkit-search-cancel-button {
+  filter: invert(1) opacity(0.6);
+}
+
+/* ============================================================
+   Tablet + mobile — sidebar becomes an off-canvas drawer
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  .app {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .app__column {
+    display: block;
+  }
+
+  .app__content {
+    overflow: visible;
+    padding: var(--sp-5) var(--sp-4)
+             calc(var(--miniplayer-h) + var(--sp-6));
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    padding: var(--sp-2) var(--sp-4);
+    border-bottom: 1px solid var(--color-hairline);
+    /* Content scrolls beneath a translucent bar rather than a hard edge. */
+    background: color-mix(in srgb, var(--color-app-bg) 88%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .topbar__menu {
+    display: flex;
+  }
+
+  .brand--topbar {
+    display: flex;
+  }
+
+  .brand--sidebar {
+    display: none;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    width: min(300px, 84vw);
+    height: 100%;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-raised);
+    transition: transform var(--dur-med) var(--ease);
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
+
+  .app__scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: var(--color-scrim);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-med) var(--ease);
+  }
+
+  .app--nav-open .app__scrim {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Drawer is off-screen; keep its contents out of the tab order. */
+  .sidebar:not(.sidebar--open) {
+    visibility: hidden;
+  }
+
+  .sidebar--open {
+    visibility: visible;
+  }
+}
+
+@media (max-width: 560px) {
+  /* The wordmark is the first thing to go when the bar gets tight. */
+  .brand--topbar .brand__name {
+    display: none;
+  }
+}

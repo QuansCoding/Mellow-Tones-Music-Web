@@ -37,7 +37,7 @@ export default function UploadForm({ onUploaded }) {
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit}>
+    <form className="panel" onSubmit={handleSubmit}>
       <h2>Upload a song</h2>
       {error && <div className="error">{error}</div>}
 
