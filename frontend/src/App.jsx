@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import HomePage from './pages/HomePage';
+import LibraryPage from './pages/LibraryPage';
+import LibraryListPage from './pages/LibraryListPage';
 import StubPage from './pages/StubPage';
 import LoginPage from './pages/LoginPage';
 import UploadPage from './pages/UploadPage';
@@ -26,11 +28,14 @@ export default function App() {
         {/* Browsing is public: GET /songs and the stream endpoint carry no
             auth dependency, so the shell renders signed out. */}
         <Route path="discover" element={<StubPage title="Discover" />} />
-        <Route path="library" element={<StubPage title="Library" />} />
-        <Route path="library/downloads" element={<StubPage title="Your Downloads" />} />
-        <Route path="library/liked" element={<StubPage title="Liked Songs" />} />
-        <Route path="library/artists" element={<StubPage title="Favorite Artist" />} />
         <Route path="create" element={<StubPage title="Create" />} />
+
+        <Route path="library" element={<LibraryPage />} />
+        <Route path="library/liked" element={<LibraryListPage kind="liked" />} />
+        <Route path="library/playlists" element={<LibraryListPage kind="playlists" />} />
+        <Route path="library/artists" element={<LibraryListPage kind="artists" />} />
+        {/* Downloads merged into Liked Songs — keep old links working. */}
+        <Route path="library/downloads" element={<Navigate to="/library/liked" replace />} />
 
         <Route path="create/manage" element={<ManagePage />} />
         <Route path="create/upload" element={<UploadPage isLoggedIn={isLoggedIn} />} />

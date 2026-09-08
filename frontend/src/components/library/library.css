@@ -1,0 +1,284 @@
+/* ============================================================
+   Library page
+   ============================================================ */
+
+.section__note {
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+/* --- Library grids -----------------------------------------------------
+   The home page pins 7 albums / 5 artists because those rows are curated
+   and always that long. A library holds a variable number, so tiles size
+   themselves and wrap instead — otherwise a single liked song renders as a
+   thumbnail stranded in a seven-track row.
+
+   auto-fill, not auto-fit: empty tracks are kept, so three tiles stay tile
+   sized and left-aligned rather than stretching across the whole row.
+   ---------------------------------------------------------------------- */
+
+.grid--fill {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.grid--fill-wide {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+
+@media (max-width: 520px) {
+  .grid--fill,
+  .grid--fill-wide {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}
+
+/* --- Clickable tiles -------------------------------------------------- */
+
+.card__button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+}
+
+.card--active {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.card--active .card__title {
+  color: var(--color-accent);
+}
+
+/* --- The "+" tile ------------------------------------------------------
+   Shares the grid track and aspect ratio with MediaCard. A dashed edge
+   reads as "a slot to fill" rather than "a thing you already own", which
+   the Figma's solid fill does not.
+   ---------------------------------------------------------------------- */
+
+.card--add {
+  background: transparent;
+  border: 2px dashed var(--color-surface-alt);
+}
+
+.card--add:hover {
+  transform: none;
+}
+
+.card__add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--color-accent);
+  border-radius: var(--radius-art);
+  transition: background var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+
+.card__add:hover {
+  background: var(--color-row-hover);
+  color: var(--color-text-cream);
+}
+
+/* The Figma's plus fills ~66% of the tile; keep it proportional so it
+   scales with the fluid grid instead of shrinking into a corner. */
+.card__add svg {
+  width: 46%;
+  height: auto;
+  stroke-width: 1.4;
+}
+
+/* --- Per-section empty state ------------------------------------------ */
+
+.empty {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  padding: var(--sp-2) 0 var(--sp-4);
+}
+
+.empty__message {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+/* --- All-empty first run ---------------------------------------------- */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  max-width: 460px;
+  min-height: 60vh;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero__title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.hero__blurb {
+  font-size: var(--fs-md);
+  color: var(--color-text-soft);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+.button-ghost {
+  color: var(--color-text-cream);
+  border: 1px solid var(--color-surface-alt);
+}
+
+.button-ghost:hover {
+  background: var(--color-row-hover);
+}
+
+/* ============================================================
+   Modal + picker
+   ============================================================ */
+
+.modal {
+  width: min(440px, calc(100vw - 2 * var(--sp-4)));
+  max-height: min(560px, 80vh);
+  padding: 0;
+  color: var(--color-text-pink);
+  background: var(--color-sidebar-bg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+  overflow: hidden;
+}
+
+.modal::backdrop {
+  background: var(--color-scrim);
+  backdrop-filter: blur(3px);
+}
+
+.modal__panel {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+  padding: var(--sp-4);
+  overflow: hidden;
+}
+
+.modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+  margin-bottom: var(--sp-4);
+}
+
+.modal__title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  color: var(--color-text-soft);
+  border-radius: var(--radius-pill);
+}
+
+.modal__close:hover {
+  background: var(--color-row-hover);
+  color: var(--color-text-cream);
+}
+
+.picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.picker__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.picker__row:hover {
+  background: var(--color-row-hover);
+}
+
+.picker__text {
+  min-width: 0;
+}
+
+.picker__primary,
+.picker__secondary {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.picker__primary {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.picker__secondary {
+  font-size: var(--fs-xs);
+  color: var(--color-text-soft);
+}
+
+.picker__mark {
+  flex-shrink: 0;
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-accent);
+  border: 1px solid var(--color-surface-alt);
+  border-radius: var(--radius-pill);
+}
+
+.picker__row--on .picker__mark {
+  color: var(--color-text-cream);
+  background: var(--color-surface-alt);
+  border-color: transparent;
+}
+
+.picker__empty {
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+@media (max-width: 520px) {
+  .hero__title { font-size: 22px; }
+  .empty__message { font-size: var(--fs-lg); }
+}

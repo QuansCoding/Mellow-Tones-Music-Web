@@ -1,8 +1,13 @@
 /* ============================================================
    Pages + form controls
-   Class names (.card, .button, .error…) are carried over from the
+   Class names (.button, .error, .hint…) are carried over from the
    original frontend so the working form components did not have to
    be rewritten — only their look moves to the new palette.
+
+   The form shell is `.panel`, NOT `.card`: home.css already owns
+   `.card` for media tiles, and the original frontend's `.card` was
+   silently applying 20px padding, a 1px border and a 20px bottom
+   margin to every album and artist tile in the app.
    ============================================================ */
 
 .page {
@@ -36,7 +41,7 @@
    Card / form shell
    ============================================================ */
 
-.card {
+.panel {
   padding: var(--sp-5);
   margin-bottom: var(--sp-5);
   background: var(--color-sidebar-bg);
@@ -44,7 +49,7 @@
   border-radius: var(--radius-md);
 }
 
-.card h2 {
+.panel h2 {
   margin-bottom: var(--sp-4);
   font-size: var(--fs-lg);
   font-weight: 700;
@@ -57,7 +62,7 @@
   padding: var(--sp-6) 0;
 }
 
-.auth-screen .card {
+.auth-screen .panel {
   width: 100%;
   max-width: 400px;
 }

@@ -11,9 +11,12 @@ const SECTIONS = [
     label: 'Library',
     to: '/library',
     end: true,
+    // Mirrors the three Library sections exactly. Downloads folded into Liked
+    // Songs, so its nav slot goes to the surviving section and Playlist takes
+    // the one Liked Songs vacated.
     children: [
-      { label: 'Your Downloads', to: '/library/downloads' },
       { label: 'Liked Songs', to: '/library/liked' },
+      { label: 'Playlist', to: '/library/playlists' },
       { label: 'Favorite Artist', to: '/library/artists' },
     ],
   },

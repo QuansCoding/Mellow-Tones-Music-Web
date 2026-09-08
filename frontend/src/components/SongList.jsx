@@ -38,7 +38,7 @@ export default function SongList({ refreshKey, onPlay }) {
   if (loading) return <p className="loading">Loading your library…</p>;
   if (error)   return <div className="error">{error}</div>;
   if (songs.length === 0)
-    return <div className="card empty">No songs yet — upload one above.</div>;
+    return <div className="panel empty">No songs yet — upload one above.</div>;
 
   return (
     <div className="song-list">

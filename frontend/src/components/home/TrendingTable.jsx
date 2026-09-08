@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { usePlayer } from '../player/playerContext';
+import { useLibrary } from '../library/libraryContext';
 import Artwork from '../common/Artwork';
 import { Heart, Play, Pause } from '../icons/Icons';
 import { formatTime } from '../../utils/format';
@@ -15,7 +15,12 @@ const PLACEHOLDERS = [
 
 function Row({ song, rank, live, songs }) {
   const { current, isPlaying, playSong, toggle } = usePlayer();
-  const [liked, setLiked] = useState(rank === 1 || rank === 3);
+  const { isLiked, toggleLike } = useLibrary();
+
+  // Backed by the persisted library rather than local state, so a like
+  // survives a reload and shows up in Library → Liked Songs. Placeholder rows
+  // keep the Figma's decorative pattern (rows 1 and 3 filled).
+  const liked = live ? isLiked(song.id) : rank === 1 || rank === 3;
 
   const isCurrent = live && current?.id === song.id;
   const nowPlaying = isCurrent && isPlaying;
@@ -63,7 +68,8 @@ function Row({ song, rank, live, songs }) {
           className={`trow__heart${liked ? ' trow__heart--on' : ''}`}
           aria-pressed={liked}
           aria-label={liked ? `Unlike ${song.title}` : `Like ${song.title}`}
-          onClick={() => setLiked((v) => !v)}
+          disabled={!live}
+          onClick={() => toggleLike(song.id)}
         >
           <Heart filled={liked} />
         </button>
