@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { usePlayer } from '../player/playerContext';
 import { useLibrary } from '../library/libraryContext';
 import Artwork from '../common/Artwork';
@@ -14,13 +15,14 @@ const PLACEHOLDERS = [
 ];
 
 function Row({ song, rank, live, songs }) {
+  const navigate = useNavigate();
   const { current, isPlaying, playSong, toggle } = usePlayer();
-  const { isLiked, toggleLike } = useLibrary();
+  const { isLiked, toggleLike, isSignedIn } = useLibrary();
 
-  // Backed by the persisted library rather than local state, so a like
-  // survives a reload and shows up in Library → Liked Songs. Placeholder rows
+  // Backed by the account's library on the server, so a like follows the user
+  // to any device and is invisible to every other account. Placeholder rows
   // keep the Figma's decorative pattern (rows 1 and 3 filled).
-  const liked = live ? isLiked(song.id) : rank === 1 || rank === 3;
+  const liked = live && isSignedIn ? isLiked(song.id) : !live && (rank === 1 || rank === 3);
 
   const isCurrent = live && current?.id === song.id;
   const nowPlaying = isCurrent && isPlaying;
@@ -67,9 +69,15 @@ function Row({ song, rank, live, songs }) {
           type="button"
           className={`trow__heart${liked ? ' trow__heart--on' : ''}`}
           aria-pressed={liked}
-          aria-label={liked ? `Unlike ${song.title}` : `Like ${song.title}`}
+          aria-label={
+            !isSignedIn
+              ? `Sign in to like ${song.title}`
+              : liked ? `Unlike ${song.title}` : `Like ${song.title}`
+          }
           disabled={!live}
-          onClick={() => toggleLike(song.id)}
+          // A like has to belong to someone, so send an anonymous visitor to
+          // sign in rather than silently dropping the click.
+          onClick={() => (isSignedIn ? toggleLike(song.id) : navigate('/login'))}
         >
           <Heart filled={liked} />
         </button>

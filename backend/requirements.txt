@@ -1,0 +1,26 @@
+# Runtime dependencies. Pinned to the versions this project is developed
+# against — `pip install -r requirements.txt` should reproduce a working env.
+
+fastapi==0.141.1
+uvicorn==0.52.4
+starlette==1.6.0
+
+# ORM + Postgres driver
+SQLAlchemy==2.0.52
+psycopg2-binary==2.9.12
+alembic==1.16.5
+
+# Validation. email-validator backs pydantic's EmailStr.
+pydantic==2.13.5
+email-validator==2.3.0
+
+# Auth: JWT signing and bcrypt password hashing.
+python-jose==3.5.0
+passlib==1.7.4
+bcrypt==3.2.2
+
+# Form/multipart bodies — required by OAuth2PasswordRequestForm and uploads.
+python-multipart==0.0.32
+
+# Reads DATABASE_URL / SECRET_KEY from .env
+python-dotenv==1.2.3

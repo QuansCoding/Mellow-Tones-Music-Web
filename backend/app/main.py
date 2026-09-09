@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import Base, engine
-from .router import songs, auth
-from . import models  # import so Base knows about the tables
+from .router import songs, auth, library
 
-Base.metadata.create_all(bind=engine)   # dev only — see note below
+# Schema is owned by Alembic — run `alembic upgrade head`.
+#
+# Base.metadata.create_all() used to live here. It only ever CREATEs missing
+# tables and never ALTERs existing ones, so it silently diverges from the
+# models the moment a column changes. Leaving it in alongside migrations is
+# worse still: it creates tables behind Alembic's back.
 
 app = FastAPI(title="Quan's Music API")
 
@@ -16,12 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 app.include_router(songs.router)
 app.include_router(auth.router)
-
-
-
-
-
-
+app.include_router(library.router)

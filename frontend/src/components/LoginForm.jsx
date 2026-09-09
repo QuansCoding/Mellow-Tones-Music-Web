@@ -18,8 +18,9 @@ export default function LoginForm({ onLoginSuccess }) {
         await register(username, email, password);
       }
       const res = await login(username, password);
-      localStorage.setItem('token', res.data.access_token);
-      onLoginSuccess();
+      // Hand the token up: AuthProvider owns storing it and loading /auth/me,
+      // so exactly one place decides who is signed in.
+      await onLoginSuccess(res.data.access_token);
     } catch (err) {
       setError(err.response?.data?.detail || 'Something went wrong');
     } finally {

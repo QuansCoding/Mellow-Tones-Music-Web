@@ -14,7 +14,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models import Song, User
+from ..models import Artist, Song, User, normalize_artist
 from ..schemas import SongOut
 from ..security import get_current_user
 from ..storage import UPLOAD_DIR, save_audio
@@ -44,6 +44,26 @@ def get_song(song_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 
+def get_or_create_artist(db: Session, name: str) -> Artist:
+    """Resolve a submitted artist name to a row, creating it if new.
+
+    Matching is on the normalised form, so "French Fuse", "french fuse" and
+    "French  Fuse " all land on the same artist instead of three near-duplicates
+    that a user would have to favourite separately.
+    """
+    normalized = normalize_artist(name)
+    if not normalized:
+        raise HTTPException(422, "Artist name cannot be blank")
+
+    artist = db.query(Artist).filter(
+        Artist.normalized_name == normalized).first()
+    if artist is None:
+        artist = Artist(name=name.strip(), normalized_name=normalized)
+        db.add(artist)
+        db.flush()          # assigns artist.id without ending the transaction
+    return artist
+
+
 MAX_BYTES = 15 * 1024 * 1024          # 15 MB
 ALLOWED = {"audio/mpeg", "audio/mp4", "audio/wav", "audio/x-wav"}
 
@@ -68,9 +88,11 @@ async def upload_song(
     if len(data) > MAX_BYTES:
         raise HTTPException(413, "File too large (max 15 MB)")
 
+    artist_row = get_or_create_artist(db, artist)
+
     key = save_audio(data, file.filename)
     song = Song(
-        title=title, artist=artist, duration_sec=duration_sec,
+        title=title, artist_id=artist_row.id, duration_sec=duration_sec,
         storage_key=key, size_bytes=len(data), uploader_id=user.id,
     )
     db.add(song)

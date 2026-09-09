@@ -12,7 +12,7 @@ const NAV_ID = 'primary-nav';
  * App-shell layout: the chrome is pinned to the viewport edges and only the
  * content column scrolls, so the sidebar and search bar can never scroll away.
  */
-export default function AppShell({ isLoggedIn }) {
+export default function AppShell() {
   const [navOpen, setNavOpen] = useState(false);
   const [query, setQuery] = useState('');
   const location = useLocation();
@@ -42,7 +42,6 @@ export default function AppShell({ isLoggedIn }) {
       <Sidebar
         id={NAV_ID}
         open={navOpen}
-        isLoggedIn={isLoggedIn}
         onNavigate={() => setNavOpen(false)}
       />
 
