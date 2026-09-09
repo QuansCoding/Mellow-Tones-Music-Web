@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import UploadForm from '../components/UploadForm';
+import { useAuth } from '../components/auth/authContext';
 import './pages.css';
 
-export default function UploadPage({ isLoggedIn }) {
+export default function UploadPage() {
+  const { isLoggedIn } = useAuth();
   const [done, setDone] = useState(0);
 
   return (

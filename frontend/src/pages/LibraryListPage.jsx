@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { fetchSongs } from '../api';
+import { useAuth } from '../components/auth/authContext';
 import { useLibrary } from '../components/library/libraryContext';
+import SignInPrompt from '../components/library/SignInPrompt';
 import { usePlayer } from '../components/player/playerContext';
 import Picker from '../components/library/Picker';
 import PlaylistDialog from '../components/library/PlaylistDialog';
@@ -19,6 +21,7 @@ const KINDS = {
 export default function LibraryListPage({ kind }) {
   const config = KINDS[kind];
   const { query } = useOutletContext();
+  const { isLoggedIn, ready } = useAuth();
   const { playSong, current } = usePlayer();
   const lib = useLibrary();
 
@@ -42,7 +45,7 @@ export default function LibraryListPage({ kind }) {
 
   const items =
     kind === 'artists'
-      ? lib.artists.filter((a) => !q || a.toLowerCase().includes(q))
+      ? lib.artists.filter((a) => !q || a.name.toLowerCase().includes(q))
       : kind === 'playlists'
         ? lib.playlists.filter((p) => !q || p.name.toLowerCase().includes(q))
         : lib.likes
@@ -65,7 +68,7 @@ export default function LibraryListPage({ kind }) {
 
   function renderTile(item) {
     if (kind === 'artists') {
-      return <MediaCard key={item} variant="album" title={item} />;
+      return <MediaCard key={item.id} variant="album" title={item.name} />;
     }
     if (kind === 'playlists') {
       return (
@@ -91,6 +94,9 @@ export default function LibraryListPage({ kind }) {
       />
     );
   }
+
+  if (!ready) return null;
+  if (!isLoggedIn) return <SignInPrompt what={config.title.toLowerCase()} />;
 
   return (
     <>

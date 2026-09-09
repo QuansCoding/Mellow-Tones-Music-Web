@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../auth/authContext';
 import Brand from './Brand';
 import Nav from './Nav';
 import AboutSong from './AboutSong';
@@ -11,7 +12,8 @@ import SidebarPlayer from '../player/SidebarPlayer';
  * where MiniPlayer takes over at the bottom edge — so the drawer stays short
  * instead of stacking ~600px of chrome above the content.
  */
-export default function Sidebar({ id, open, onNavigate, isLoggedIn }) {
+export default function Sidebar({ id, open, onNavigate }) {
+  const { isLoggedIn } = useAuth();
   return (
     <aside
       id={id}

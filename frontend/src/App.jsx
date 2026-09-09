@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import HomePage from './pages/HomePage';
@@ -11,18 +10,11 @@ import ManagePage from './pages/ManagePage';
 import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    () => !!localStorage.getItem('token'),
-  );
-
-  function logout() {
-    localStorage.removeItem('token');
-    setIsLoggedIn(false);
-  }
-
   return (
     <Routes>
-      <Route path="/" element={<AppShell isLoggedIn={isLoggedIn} />}>
+      {/* Identity now comes from useAuth() wherever it is needed, rather than
+          being threaded down as props from here. */}
+      <Route path="/" element={<AppShell />}>
         <Route index element={<HomePage />} />
 
         {/* Browsing is public: GET /songs and the stream endpoint carry no
@@ -38,9 +30,9 @@ export default function App() {
         <Route path="library/downloads" element={<Navigate to="/library/liked" replace />} />
 
         <Route path="create/manage" element={<ManagePage />} />
-        <Route path="create/upload" element={<UploadPage isLoggedIn={isLoggedIn} />} />
-        <Route path="login" element={<LoginPage onLogin={() => setIsLoggedIn(true)} />} />
-        <Route path="settings" element={<SettingsPage onLogout={logout} />} />
+        <Route path="create/upload" element={<UploadPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="settings" element={<SettingsPage />} />
 
         <Route
           path="*"

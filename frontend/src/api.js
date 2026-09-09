@@ -11,13 +11,19 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// If the token expired, log out once, globally.
+// If the token expired, drop it and let the app react.
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isLoginAttempt = error.config?.url?.includes('/auth/login');
+    // A 401 from /auth/login is just wrong credentials, not an expired
+    // session — clearing the token there would sign out a valid session
+    // because someone mistyped a password.
+    if (error.response?.status === 401 && !isLoginAttempt) {
       localStorage.removeItem('token');
-      window.location.reload();
+      // AuthProvider listens for this and clears the user + library in place,
+      // rather than reloading the page out from under whatever they were doing.
+      window.dispatchEvent(new Event('mellowtones:unauthorized'));
     }
     return Promise.reject(error);
   }
@@ -44,3 +50,35 @@ export const uploadSong = (title, artist, duration_sec, file) => {
 
 export const getSongStreamUrl = (id) =>
   `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/songs/${id}/stream`;
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+/** Who the stored token belongs to. Without this the client cannot attribute
+ *  a library to anyone, which is why it used to live in localStorage. */
+export const getMe = () => API.get('/auth/me');
+
+// ---------------------------------------------------------------------------
+// Library — every one of these is scoped server-side to the bearer token.
+// ---------------------------------------------------------------------------
+
+/** One aggregate read: likes, favourite artists and playlists in a single
+ *  round trip rather than three. */
+export const fetchLibrary = () => API.get('/me/library');
+
+// PUT/DELETE rather than POST: idempotent, so a double-click is harmless.
+export const likeSong = (songId) => API.put(`/me/likes/${songId}`);
+export const unlikeSong = (songId) => API.delete(`/me/likes/${songId}`);
+
+export const favoriteArtist = (artistId) => API.put(`/me/artists/${artistId}`);
+export const unfavoriteArtist = (artistId) => API.delete(`/me/artists/${artistId}`);
+
+export const createPlaylist = (name) => API.post('/me/playlists', { name });
+export const renamePlaylist = (id, name) => API.patch(`/me/playlists/${id}`, { name });
+export const deletePlaylist = (id) => API.delete(`/me/playlists/${id}`);
+
+export const addSongToPlaylist = (playlistId, songId) =>
+  API.put(`/me/playlists/${playlistId}/songs/${songId}`);
+export const removeSongFromPlaylist = (playlistId, songId) =>
+  API.delete(`/me/playlists/${playlistId}/songs/${songId}`);

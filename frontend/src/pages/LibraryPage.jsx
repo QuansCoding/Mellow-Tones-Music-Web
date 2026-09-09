@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { fetchSongs } from '../api';
+import { useAuth } from '../components/auth/authContext';
 import { useLibrary } from '../components/library/libraryContext';
 import { usePlayer } from '../components/player/playerContext';
 import LibrarySection from '../components/library/LibrarySection';
 import LibraryHero from '../components/library/LibraryHero';
+import SignInPrompt from '../components/library/SignInPrompt';
 import Picker from '../components/library/Picker';
 import PlaylistDialog from '../components/library/PlaylistDialog';
 import MediaCard from '../components/home/MediaCard';
@@ -13,6 +15,7 @@ import '../components/library/library.css';
 
 export default function LibraryPage() {
   const { query } = useOutletContext();
+  const { isLoggedIn, ready } = useAuth();
   const { playSong, current } = usePlayer();
   const lib = useLibrary();
 
@@ -33,11 +36,15 @@ export default function LibraryPage() {
     [songs],
   );
 
-  /** Every distinct artist in the catalogue — the only real artist data there is. */
-  const allArtists = useMemo(
-    () => [...new Set(songs.map((s) => s.artist))].sort(),
-    [songs],
-  );
+  /** Artists are rows now, so the catalogue yields {id, name} pairs and
+   *  favourites are keyed by id rather than by a spelling of the name. */
+  const allArtists = useMemo(() => {
+    const seen = new Map();
+    for (const s of songs) {
+      if (!seen.has(s.artist_id)) seen.set(s.artist_id, { id: s.artist_id, name: s.artist });
+    }
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [songs]);
 
   const q = query.trim().toLowerCase();
   const matchSong = (s) =>
@@ -50,7 +57,7 @@ export default function LibraryPage() {
   const shown = {
     liked: liked.filter(matchSong),
     playlists: playlists.filter((p) => !q || p.name.toLowerCase().includes(q)),
-    artists: favArtists.filter((a) => !q || a.toLowerCase().includes(q)),
+    artists: favArtists.filter((a) => !q || a.name.toLowerCase().includes(q)),
   };
 
   const openPlaylist = playlists.find((p) => p.id === dialog?.playlistId);
@@ -61,7 +68,7 @@ export default function LibraryPage() {
     secondary: s.artist,
   }));
 
-  const artistItems = allArtists.map((a) => ({ id: a, primary: a }));
+  const artistItems = allArtists.map((a) => ({ id: a.id, primary: a.name }));
 
   const noSongsNote =
     'No songs in the catalogue yet. Upload one from Create → Upload Song.';
@@ -83,7 +90,9 @@ export default function LibraryPage() {
         title="Choose favourite artists"
         items={artistItems}
         isSelected={lib.isFavoriteArtist}
-        onToggle={lib.toggleArtist}
+        // toggleArtist needs the whole artist so it can show the name without
+        // a second lookup after an optimistic add.
+        onToggle={(id) => lib.toggleArtist(allArtists.find((a) => a.id === id))}
         emptyNote={noSongsNote}
       />
       <Picker
@@ -103,9 +112,19 @@ export default function LibraryPage() {
     </>
   );
 
+  // Wait for /auth/me before deciding, so a reload does not flash the
+  // signed-out prompt at someone who is signed in.
+  if (!ready) return null;
+  if (!isLoggedIn) return <SignInPrompt />;
+
+  const banner = lib.error ? (
+    <div className="error" role="alert">{lib.error}</div>
+  ) : null;
+
   if (lib.isEmpty) {
     return (
       <>
+        {banner}
         <LibraryHero
           onAddSongs={() => setDialog('likes')}
           onNewPlaylist={() => setDialog('playlist')}
@@ -117,6 +136,8 @@ export default function LibraryPage() {
 
   return (
     <>
+      {banner}
+
       {/* Liked Songs is the primary section: the merged home for every song
           you keep, and what the heart on the home page writes into. */}
       <LibrarySection
@@ -180,7 +201,7 @@ export default function LibraryPage() {
         emptyAction="Choose artists"
       >
         {shown.artists.map((a) => (
-          <MediaCard key={a} variant="album" title={a} />
+          <MediaCard key={a.id} variant="album" title={a.name} />
         ))}
       </LibrarySection>
 
