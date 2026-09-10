@@ -242,6 +242,45 @@
 .trow__like {
   display: flex;
   justify-content: center;
+  gap: 2px;
+}
+
+/* Shares the heart's shape and hit area so the pair reads as one control
+   group. Revealed on row hover/focus rather than always-on, which keeps the
+   heart the primary action; touch has no hover, so it stays visible there. */
+.trow__add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--color-text-soft);
+  border-radius: var(--radius-pill);
+  opacity: 0;
+  transition: color var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease),
+              opacity var(--dur-fast) var(--ease);
+}
+
+.trow:hover .trow__add,
+.trow__add:focus-visible {
+  opacity: 1;
+}
+
+.trow__add:hover:not(:disabled) {
+  background: var(--color-row-hover);
+  color: var(--color-text-cream);
+}
+
+.trow__add:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (hover: none) {
+  .trow__add:not(:disabled) {
+    opacity: 1;
+  }
 }
 
 .trow__heart {

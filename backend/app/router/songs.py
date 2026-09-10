@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Artist, Song, User, normalize_artist
-from ..schemas import SongOut
+from ..schemas import SongOut, SongUpdate
 from ..security import get_current_user
 from ..storage import UPLOAD_DIR, save_audio
 
@@ -29,6 +29,24 @@ def list_songs(db: Session = Depends(get_db)):
     #   Hint: db.query(Song).order_by(Song.created_at.desc()).all()
     db_songs = db.query(Song).order_by(Song.created_at.desc()).all()
     return db_songs
+
+
+@router.get("/mine", response_model=list[SongOut])
+def list_my_songs(db: Session = Depends(get_db),
+                  user: User = Depends(get_current_user)):
+    """Only the songs the caller uploaded, newest first.
+
+    This is what the Manage page reads. Managing songs is scoped to the ones
+    you posted, so the list never offers you an edit or delete button that the
+    server would then refuse. Declared before "/{song_id}" so the literal
+    path wins over the UUID parameter.
+    """
+    return (
+        db.query(Song)
+        .filter(Song.uploader_id == user.id)
+        .order_by(Song.created_at.desc())
+        .all()
+    )
 
 
 @router.get("/{song_id}", response_model=SongOut)
@@ -153,6 +171,38 @@ def stream_song(song_id: uuid.UUID, request: Request,
             "Content-Length": str(len(data)),
         },
     )
+
+"""Method to edit a song's metadata"""
+
+@router.patch("/{song_id}", response_model=SongOut)
+def update_song(song_id: uuid.UUID, changes: SongUpdate,
+                db: Session = Depends(get_db),
+                user: User = Depends(get_current_user)):
+    """Rename a song or re-attribute its artist.
+
+    Same ownership rule as delete: 404 if it does not exist, 403 if it is
+    someone else's. Only the fields sent are touched, so a title-only edit
+    leaves the artist alone.
+    """
+    song = db.get(Song, song_id)
+    if song is None:
+        raise HTTPException(404, "Song not found")
+    if song.uploader_id != user.id:
+        raise HTTPException(403, "You can only edit your own songs")
+
+    data = changes.model_dump(exclude_unset=True)
+    if "title" in data:
+        title = (data["title"] or "").strip()
+        if not title:
+            raise HTTPException(422, "Title cannot be blank")
+        song.title = title
+    if "artist" in data:
+        song.artist_id = get_or_create_artist(db, data["artist"] or "").id
+
+    db.commit()
+    db.refresh(song)
+    return song
+
 
 """Method to delete songs"""
 

@@ -15,15 +15,17 @@ export default function PlaylistDialog({ open, onClose, onCreate }) {
   return (
     <Modal open={open} onClose={onClose} title="New playlist">
       <form onSubmit={submit}>
-        <label htmlFor="playlist-name">Name</label>
-        <input
+        <label className="field-label" htmlFor="playlist-name">Name</label>
+        <input className="field"
           id="playlist-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Late night mix"
           maxLength={60}
-          // Autofocus is appropriate here: the dialog exists to take this input.
-          autoFocus
+          // The dialog exists to take this input, so focus it — via
+          // data-autofocus, since React's autoFocus is applied while the
+          // <dialog> is still inert and showModal() then discards it.
+          data-autofocus
         />
         <button type="submit" className="button button-primary" disabled={!name.trim()}>
           Create playlist

@@ -4,6 +4,7 @@ import { useLibrary } from '../library/libraryContext';
 import Artwork from '../common/Artwork';
 import { Heart, Play, Pause } from '../icons/Icons';
 import { formatTime } from '../../utils/format';
+import AddToPlaylistButton from '../library/AddToPlaylistButton';
 
 /** Figma placeholder rows, shown when the library is empty or unreachable. */
 const PLACEHOLDERS = [
@@ -16,7 +17,7 @@ const PLACEHOLDERS = [
 
 function Row({ song, rank, live, songs }) {
   const navigate = useNavigate();
-  const { current, isPlaying, playSong, toggle } = usePlayer();
+  const { current, isPlaying, playOrToggle } = usePlayer();
   const { isLiked, toggleLike, isSignedIn } = useLibrary();
 
   // Backed by the account's library on the server, so a like follows the user
@@ -28,9 +29,7 @@ function Row({ song, rank, live, songs }) {
   const nowPlaying = isCurrent && isPlaying;
 
   const onActivate = () => {
-    if (!live) return;
-    if (isCurrent) toggle();
-    else playSong(song, songs);
+    if (live) playOrToggle(song, songs);
   };
 
   return (
@@ -81,6 +80,14 @@ function Row({ song, rank, live, songs }) {
         >
           <Heart filled={liked} />
         </button>
+        {/* Liking was reachable from here but adding to a playlist was not,
+            which left the library dialog carrying that job alone. Placeholder
+            rows pass no song, so the button disables itself. */}
+        <AddToPlaylistButton
+          song={live ? song : null}
+          className="trow__add"
+          size={14}
+        />
       </span>
 
       <span className="trow__length" role="cell">

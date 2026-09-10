@@ -81,7 +81,81 @@
   color: var(--color-accent);
 }
 
+/* The row holds the option plus its action buttons side by side. The option
+   keeps its own hover/active highlight; hovering the actions highlights the
+   row too, so the pair reads as one strip. */
+.search__row {
+  display: flex;
+  align-items: stretch;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.search__row:has(.search__option--active) {
+  background: var(--color-row-hover);
+}
+
+.search__row-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: var(--sp-2);
+}
+
+.search__act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--color-text-soft);
+  border-radius: var(--radius-pill);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+
+.search__row:hover .search__act,
+.search__row:has(.search__option--active) .search__act,
+/* A filled heart is state, not just an action, so it stays readable. */
+.search__act--on {
+  opacity: 1;
+}
+
+.search__act--on {
+  color: var(--color-accent);
+}
+
+.search__act:hover {
+  background: var(--color-surface);
+  color: var(--color-text-cream);
+}
+
+@media (hover: none) {
+  .search__act {
+    opacity: 1;
+  }
+}
+
+.search__hint {
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-2xs);
+  color: var(--color-text-soft);
+  border-top: 1px solid var(--color-hairline);
+}
+
+.search__hint kbd {
+  padding: 1px 4px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-text-cream);
+  background: var(--color-surface);
+  border-radius: 3px;
+}
+
 .search__option {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--sp-3);
@@ -95,6 +169,14 @@
 
 .search__option--active {
   background: var(--color-row-hover);
+}
+
+/* Inside a row the *row* paints the highlight so it runs behind the action
+   buttons too. The highlight is translucent, so leaving it on both stacked
+   two layers over the option and left a visible seam mid-row. "See all
+   results" is a bare option with no row, so it keeps its own. */
+.search__row .search__option--active {
+  background: transparent;
 }
 
 .search__option-icon {

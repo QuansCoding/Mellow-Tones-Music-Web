@@ -67,13 +67,19 @@
   max-width: 400px;
 }
 
-/* Scoped to form surfaces on purpose. As bare `label` / `input` selectors
-   these hit every input in the app — the search field and all three range
-   scrubbers included, where `min-height: 44px` silently inflated a 17px
-   seek strip into a 44px one that swallowed neighbouring taps. */
+/* Opt-in by class, not by element.
+   These began as bare `label` / `input` selectors, which hit every input in
+   the app — the search field and all three range scrubbers included, where
+   `min-height: 44px` silently inflated a 17px seek strip into a 44px one that
+   swallowed neighbouring taps. Scoping them to `.panel` / `.modal` narrowed
+   the blast radius but kept the trap armed: `.modal input` still descendant-
+   matches anything later placed in a dialog, and it went on to override the
+   picker's own search field (padding, height and all) purely on specificity.
+   Matching an explicit class instead means a new control in a form surface is
+   never styled by accident. */
 
-.panel label,
-.modal label {
+.panel .field-label,
+.modal .field-label {
   display: block;
   margin-bottom: var(--sp-1);
   font-size: var(--fs-xs);
@@ -83,8 +89,8 @@
   color: var(--color-accent);
 }
 
-.panel input,
-.modal input {
+.panel .field,
+.modal .field {
   width: 100%;
   min-height: 44px;
   padding: var(--sp-2) var(--sp-3);
@@ -97,22 +103,22 @@
   transition: border-color var(--dur-fast) var(--ease);
 }
 
-.panel input:hover,
-.modal input:hover {
+.panel .field:hover,
+.modal .field:hover {
   border-color: var(--color-accent);
 }
 
-.panel input:focus-visible,
-.modal input:focus-visible {
+.panel .field:focus-visible,
+.modal .field:focus-visible {
   border-color: var(--color-focus);
 }
 
-.panel input[type='file'] {
+.panel .field[type='file'] {
   padding: var(--sp-2);
   cursor: pointer;
 }
 
-.panel input[type='file']::file-selector-button {
+.panel .field[type='file']::file-selector-button {
   margin-right: var(--sp-3);
   padding: var(--sp-1) var(--sp-3);
   font: inherit;
@@ -235,6 +241,24 @@
   font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   color: var(--color-accent);
+}
+
+/* Inline edit form. Bare `input` is deliberately not styled globally, so the
+   edit fields need their own rule to match the dark card. */
+.song-card input {
+  width: 100%;
+  margin-bottom: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  font: inherit;
+  color: var(--color-text-cream);
+  background: var(--color-app-bg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+}
+
+.song-card input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
 }
 
 .song-actions {

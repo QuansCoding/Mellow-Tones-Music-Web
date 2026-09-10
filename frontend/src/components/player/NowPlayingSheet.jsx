@@ -6,6 +6,7 @@ import Artwork from '../common/Artwork';
 import {
   Play, Pause, SkipBack, SkipForward, ChevronDown,
 } from '../icons/Icons';
+import AddToPlaylistButton from '../library/AddToPlaylistButton';
 
 /**
  * Full-screen Now Playing view, expanded from the mini-player.
@@ -57,6 +58,9 @@ export default function NowPlayingSheet() {
           <ChevronDown size={24} />
         </button>
         <span className="sheet__eyebrow">Now Playing</span>
+        {/* Mobile's counterpart to the sidebar device's + — the mini bar is
+            too tight for another target, so it lives here. */}
+        <AddToPlaylistButton song={current} className="sheet__add" size={20} />
       </div>
 
       <Artwork className="sheet__art" alt={`Cover art for ${current.title}`} />

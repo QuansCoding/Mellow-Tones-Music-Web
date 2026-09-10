@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/authContext';
 import { useLibrary } from '../components/library/libraryContext';
 import SignInPrompt from '../components/library/SignInPrompt';
 import { usePlayer } from '../components/player/playerContext';
 import { useCatalog } from '../components/catalog/catalogContext';
-import { usePlayPlaylist } from '../hooks/usePlayPlaylist';
+import { usePlayPlaylist, usePlaylistPlayback } from '../hooks/usePlayPlaylist';
 import PlaylistCard from '../components/library/PlaylistCard';
-import Picker from '../components/library/Picker';
+import LikeButton from '../components/library/LikeButton';
+import AddToPlaylistButton from '../components/library/AddToPlaylistButton';
 import PlaylistDialog from '../components/library/PlaylistDialog';
 import MediaCard from '../components/home/MediaCard';
 import '../components/home/home.css';
@@ -22,10 +23,12 @@ const KINDS = {
 /** The destination behind each section's "Show All" — the same tiles, uncapped. */
 export default function LibraryListPage({ kind }) {
   const config = KINDS[kind];
+  const navigate = useNavigate();
   const { isLoggedIn, ready } = useAuth();
-  const { playSong, current } = usePlayer();
-  const { songs, byId, resolve } = useCatalog();
+  const { playOrToggle, current, isPlaying } = usePlayer();
+  const { byId } = useCatalog();
   const playPlaylist = usePlayPlaylist();
+  const playbackOf = usePlaylistPlayback();
   const lib = useLibrary();
 
   const [dialog, setDialog] = useState(null);
@@ -37,26 +40,27 @@ export default function LibraryListPage({ kind }) {
         ? lib.playlists
         : lib.likes.map((id) => byId[id]).filter(Boolean);
 
-  const openPlaylist = lib.playlists.find((p) => p.id === dialog?.playlistId);
-
-  const songItems = songs.map((s) => ({
-    id: s.id,
-    primary: s.title,
-    secondary: s.artist,
-  }));
-
   function renderTile(item) {
     if (kind === 'artists') {
-      return <MediaCard key={item.id} variant="album" title={item.name} />;
+      return (
+        <MediaCard
+          key={item.id}
+          variant="album"
+          title={item.name}
+          actions={<LikeButton artist={item} />}
+        />
+      );
     }
     if (kind === 'playlists') {
+      const { playable, playing } = playbackOf(item);
       return (
         <PlaylistCard
           key={item.id}
           playlist={item}
-          playable={resolve(item.songIds).length > 0}
+          playable={playable}
+          playing={playing}
           onPlay={() => playPlaylist(item)}
-          onEdit={() => setDialog({ playlistId: item.id })}
+          onOpen={() => navigate(`/library/playlists/${item.id}`)}
         />
       );
     }
@@ -67,8 +71,18 @@ export default function LibraryListPage({ kind }) {
         title={item.title}
         subtitle={item.artist}
         active={current?.id === item.id}
-        onClick={() => playSong(item, items)}
-        actionLabel={`Play ${item.title} by ${item.artist}`}
+        onClick={() => playOrToggle(item, items)}
+        actionLabel={
+          current?.id === item.id && isPlaying
+            ? `Pause ${item.title}`
+            : `Play ${item.title} by ${item.artist}`
+        }
+        actions={
+          <>
+            <LikeButton song={item} />
+            <AddToPlaylistButton song={item} />
+          </>
+        }
       />
     );
   }
@@ -98,15 +112,6 @@ export default function LibraryListPage({ kind }) {
         )}
       </section>
 
-      <Picker
-        open={Boolean(openPlaylist)}
-        onClose={() => setDialog(null)}
-        title={openPlaylist ? `Songs in “${openPlaylist.name}”` : ''}
-        items={songItems}
-        isSelected={(id) => Boolean(openPlaylist?.songIds.includes(id))}
-        onToggle={(id) => lib.togglePlaylistSong(openPlaylist.id, id)}
-        emptyNote="No songs in the catalogue yet."
-      />
       <PlaylistDialog
         open={dialog === 'newPlaylist'}
         onClose={() => setDialog(null)}

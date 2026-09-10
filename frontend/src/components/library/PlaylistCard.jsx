@@ -1,32 +1,32 @@
 import Artwork from '../common/Artwork';
-import { Play, Plus } from '../icons/Icons';
+import { Play, Pause } from '../icons/Icons';
 
 /**
- * A playlist tile: clicking it plays the playlist, with the rest queued.
+ * A playlist tile: clicking it opens the playlist's page, with a play button
+ * over the artwork.
  *
- * Previously clicking opened the song editor, which made playlists the only
- * card in the app where a click did not play — and left no way to play one at
- * all. Editing moves to a secondary button revealed on hover and focus, the
- * same pattern the Trending rows already use for their rank/play swap.
+ * This reverses an earlier call, and the reason it should. Clicking used to
+ * open a song-picker modal, so playback was made the click target — at the
+ * time there was nothing better for a click to do. Now that a playlist has a
+ * page, the rule that holds across the app is by object type: a song tile
+ * plays, a container tile opens. The play button keeps starting it in one
+ * click from the grid.
  *
- * The Edit button is a real sibling button rather than a nested one: a button
- * inside a button is invalid HTML and browsers resolve it unpredictably.
+ * It is a real sibling button, not nested inside the card's button: a button
+ * inside a button is invalid HTML and browsers resolve it unpredictably. The
+ * card's :focus-within reveals it, so it is reachable by keyboard, and it
+ * stays visible while this playlist is the one playing.
  */
-export default function PlaylistCard({ playlist, playable, onPlay, onEdit }) {
+export default function PlaylistCard({ playlist, playable, playing, onPlay, onOpen }) {
   const count = playlist.songIds.length;
 
   return (
-    <li className="card card--artist card--playlist">
+    <li className={`card card--artist card--playlist${playing ? ' card--active' : ''}`}>
       <button
         type="button"
         className="card__button"
-        onClick={onPlay}
-        disabled={!playable}
-        aria-label={
-          playable
-            ? `Play ${playlist.name}`
-            : `${playlist.name} is empty — add songs to play it`
-        }
+        onClick={onOpen}
+        aria-label={`Open ${playlist.name}`}
       >
         <Artwork className="card__art" alt={`${playlist.name} cover art`} />
         <div className="card__info">
@@ -35,20 +35,22 @@ export default function PlaylistCard({ playlist, playable, onPlay, onEdit }) {
             {count} {count === 1 ? 'song' : 'songs'}
           </p>
         </div>
-        {playable && (
-          <span className="card__play" aria-hidden="true">
-            <Play size={16} />
-          </span>
-        )}
       </button>
 
       <button
         type="button"
-        className="card__edit"
-        onClick={onEdit}
-        aria-label={`Edit songs in ${playlist.name}`}
+        className="card__play"
+        onClick={onPlay}
+        disabled={!playable}
+        aria-label={
+          !playable
+            ? `${playlist.name} is empty — add songs to play it`
+            : playing
+              ? `Pause ${playlist.name}`
+              : `Play ${playlist.name}`
+        }
       >
-        <Plus size={14} />
+        {playing ? <Pause size={16} /> : <Play size={16} />}
       </button>
     </li>
   );

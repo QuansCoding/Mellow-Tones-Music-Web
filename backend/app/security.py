@@ -23,7 +23,7 @@ oauth2_scheme_optional = OAuth2PasswordBearer(
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(plain: str) -> str:
-    # TODO 1: return the bcrypt hash. Hint: pwd_context.hash(plain)
+    #bcrypt hash return
     return pwd_context.hash(plain)
 
 def verify_password(plain: str, hashed: str) -> bool:

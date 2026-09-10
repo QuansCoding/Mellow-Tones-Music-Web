@@ -36,9 +36,17 @@ def _prefix(term: str) -> str:
 def search(
     q: str = Query("", max_length=100),
     limit: int = Query(6, ge=1, le=50),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     user: User | None = Depends(get_current_user_optional),
 ):
+    """Paging note: every ordering below ends with the primary key.
+
+    Rank and lowered name are both non-unique, and a tie between two rows is
+    broken by whatever order the database happens to return. Across two pages
+    that is not stable, so rows would silently duplicate on one page and go
+    missing from another. The id tiebreak is what makes `offset` trustworthy.
+    """
     term = q.strip()
     if not term:
         return SearchOut(songs=[], artists=[], playlists=[])
@@ -64,7 +72,8 @@ def search(
                 Artist.name.ilike(like, escape="\\"),
             )
         )
-        .order_by(song_rank, func.lower(Song.title))
+        .order_by(song_rank, func.lower(Song.title), Song.id)
+        .offset(offset)
         .limit(limit)
     ).all()
 
@@ -74,7 +83,9 @@ def search(
         .order_by(
             case((Artist.name.ilike(prefix, escape="\\"), 0), else_=1),
             func.lower(Artist.name),
+            Artist.id,
         )
+        .offset(offset)
         .limit(limit)
     ).all()
 
@@ -89,7 +100,9 @@ def search(
             .order_by(
                 case((Playlist.name.ilike(prefix, escape="\\"), 0), else_=1),
                 func.lower(Playlist.name),
+                Playlist.id,
             )
+            .offset(offset)
             .limit(limit)
         ).all()
         playlists = [

@@ -134,27 +134,43 @@ export default function LibraryProvider({ children }) {
   );
 
   // Creation needs the server-assigned id, so this one cannot be optimistic.
+  // Returns the new playlist (or null) so a caller can act on it straight
+  // away — "New playlist" in the add-to-playlist dialog creates one and drops
+  // the current song into it in a single gesture.
   const createPlaylist = useCallback(async (name) => {
     const clean = name.trim();
-    if (!clean) return;
+    if (!clean) return null;
     try {
       const { data } = await api.createPlaylist(clean);
-      setState((s) => ({
-        ...s,
-        playlists: [
-          ...s.playlists,
-          { id: data.id, name: data.name, songIds: data.song_ids },
-        ],
-      }));
+      const playlist = { id: data.id, name: data.name, songIds: data.song_ids };
+      setState((s) => ({ ...s, playlists: [...s.playlists, playlist] }));
       setError('');
+      return playlist;
     } catch (err) {
       setError(
         err?.response?.status === 409
           ? 'You already have a playlist with that name'
           : 'Could not create that playlist',
       );
+      return null;
     }
   }, []);
+
+  const renamePlaylist = useCallback(
+    (id, name) => {
+      const clean = name.trim();
+      if (!clean) return;
+      mutate(
+        (s) => ({
+          ...s,
+          playlists: s.playlists.map((p) => (p.id === id ? { ...p, name: clean } : p)),
+        }),
+        () => api.renamePlaylist(id, clean),
+        'Could not rename that playlist',
+      );
+    },
+    [mutate],
+  );
 
   const removePlaylist = useCallback(
     (id) => {
@@ -162,6 +178,33 @@ export default function LibraryProvider({ children }) {
         (s) => ({ ...s, playlists: s.playlists.filter((p) => p.id !== id) }),
         () => api.deletePlaylist(id),
         'Could not delete that playlist',
+      );
+    },
+    [mutate],
+  );
+
+  /**
+   * Unconditional add, mirroring the idempotent PUT on the server.
+   *
+   * togglePlaylistSong cannot serve the create-then-add case: it looks the
+   * playlist up in the `state.playlists` its closure captured, which for a
+   * playlist created moments earlier does not contain it yet, so the toggle
+   * silently does nothing. This one only ever adds and reads the playlist
+   * through the functional updater, so it always sees current state.
+   */
+  const addSongToPlaylist = useCallback(
+    (playlistId, songId) => {
+      mutate(
+        (s) => ({
+          ...s,
+          playlists: s.playlists.map((p) =>
+            p.id === playlistId && !p.songIds.includes(songId)
+              ? { ...p, songIds: [...p.songIds, songId] }
+              : p,
+          ),
+        }),
+        () => api.addSongToPlaylist(playlistId, songId),
+        'Could not add that song to the playlist',
       );
     },
     [mutate],
@@ -206,12 +249,15 @@ export default function LibraryProvider({ children }) {
       toggleLike,
       toggleArtist,
       createPlaylist,
+      renamePlaylist,
       removePlaylist,
+      addSongToPlaylist,
       togglePlaylistSong,
     };
   }, [
     state, loading, error, userId,
-    toggleLike, toggleArtist, createPlaylist, removePlaylist, togglePlaylistSong,
+    toggleLike, toggleArtist, createPlaylist, renamePlaylist, removePlaylist,
+    addSongToPlaylist, togglePlaylistSong,
   ]);
 
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;
