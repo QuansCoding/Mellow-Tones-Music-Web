@@ -3,6 +3,7 @@ import AppShell from './components/layout/AppShell';
 import HomePage from './pages/HomePage';
 import LibraryPage from './pages/LibraryPage';
 import LibraryListPage from './pages/LibraryListPage';
+import SearchPage from './pages/SearchPage';
 import StubPage from './pages/StubPage';
 import LoginPage from './pages/LoginPage';
 import UploadPage from './pages/UploadPage';
@@ -19,6 +20,7 @@ export default function App() {
 
         {/* Browsing is public: GET /songs and the stream endpoint carry no
             auth dependency, so the shell renders signed out. */}
+        <Route path="search" element={<SearchPage />} />
         <Route path="discover" element={<StubPage title="Discover" />} />
         <Route path="create" element={<StubPage title="Create" />} />
 

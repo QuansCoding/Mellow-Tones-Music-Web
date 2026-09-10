@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { fetchSongs } from '../api';
+import { useMemo, useState } from 'react';
 import { useAuth } from '../components/auth/authContext';
+import { useCatalog } from '../components/catalog/catalogContext';
 import { useLibrary } from '../components/library/libraryContext';
 import { usePlayer } from '../components/player/playerContext';
+import { usePlayPlaylist } from '../hooks/usePlayPlaylist';
 import LibrarySection from '../components/library/LibrarySection';
 import LibraryHero from '../components/library/LibraryHero';
 import SignInPrompt from '../components/library/SignInPrompt';
+import PlaylistCard from '../components/library/PlaylistCard';
 import Picker from '../components/library/Picker';
 import PlaylistDialog from '../components/library/PlaylistDialog';
 import MediaCard from '../components/home/MediaCard';
@@ -14,27 +15,14 @@ import '../components/home/home.css';
 import '../components/library/library.css';
 
 export default function LibraryPage() {
-  const { query } = useOutletContext();
   const { isLoggedIn, ready } = useAuth();
+  const { songs, byId, resolve } = useCatalog();
   const { playSong, current } = usePlayer();
+  const playPlaylist = usePlayPlaylist();
   const lib = useLibrary();
 
-  const [songs, setSongs] = useState([]);
   // null | 'likes' | 'artists' | 'playlist' | { playlistId }
   const [dialog, setDialog] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchSongs()
-      .then((res) => { if (!cancelled) setSongs(res.data); })
-      .catch(() => { if (!cancelled) setSongs([]); });
-    return () => { cancelled = true; };
-  }, []);
-
-  const byId = useMemo(
-    () => Object.fromEntries(songs.map((s) => [s.id, s])),
-    [songs],
-  );
 
   /** Artists are rows now, so the catalogue yields {id, name} pairs and
    *  favourites are keyed by id rather than by a spelling of the name. */
@@ -46,19 +34,9 @@ export default function LibraryPage() {
     return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [songs]);
 
-  const q = query.trim().toLowerCase();
-  const matchSong = (s) =>
-    !q || s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q);
-
   const liked = lib.likes.map((id) => byId[id]).filter(Boolean);
   const playlists = lib.playlists;
   const favArtists = lib.artists;
-
-  const shown = {
-    liked: liked.filter(matchSong),
-    playlists: playlists.filter((p) => !q || p.name.toLowerCase().includes(q)),
-    artists: favArtists.filter((a) => !q || a.name.toLowerCase().includes(q)),
-  };
 
   const openPlaylist = playlists.find((p) => p.id === dialog?.playlistId);
 
@@ -90,8 +68,6 @@ export default function LibraryPage() {
         title="Choose favourite artists"
         items={artistItems}
         isSelected={lib.isFavoriteArtist}
-        // toggleArtist needs the whole artist so it can show the name without
-        // a second lookup after an optimistic add.
         onToggle={(id) => lib.toggleArtist(allArtists.find((a) => a.id === id))}
         emptyNote={noSongsNote}
       />
@@ -138,27 +114,23 @@ export default function LibraryPage() {
     <>
       {banner}
 
-      {/* Liked Songs is the primary section: the merged home for every song
-          you keep, and what the heart on the home page writes into. */}
       <LibrarySection
         title="Liked Songs"
         id="lib-liked"
         showAllTo="/library/liked"
         variant="album"
-        count={shown.liked.length}
-        total={liked.length}
-        query={query}
+        count={liked.length}
         onAdd={() => setDialog('likes')}
         addLabel="Add liked songs"
       >
-        {shown.liked.map((s) => (
+        {liked.map((s) => (
           <MediaCard
             key={s.id}
             variant="album"
             title={s.title}
             subtitle={s.artist}
             active={current?.id === s.id}
-            onClick={() => playSong(s, shown.liked)}
+            onClick={() => playSong(s, liked)}
             actionLabel={`Play ${s.title} by ${s.artist}`}
           />
         ))}
@@ -169,20 +141,17 @@ export default function LibraryPage() {
         id="lib-playlists"
         showAllTo="/library/playlists"
         variant="artist"
-        count={shown.playlists.length}
-        total={playlists.length}
-        query={query}
+        count={playlists.length}
         onAdd={() => setDialog('playlist')}
         addLabel="Create a playlist"
       >
-        {shown.playlists.map((p) => (
-          <MediaCard
+        {playlists.map((p) => (
+          <PlaylistCard
             key={p.id}
-            variant="artist"
-            title={p.name}
-            subtitle={`${p.songIds.length} ${p.songIds.length === 1 ? 'song' : 'songs'}`}
-            onClick={() => setDialog({ playlistId: p.id })}
-            actionLabel={`Edit songs in ${p.name}`}
+            playlist={p}
+            playable={resolve(p.songIds).length > 0}
+            onPlay={() => playPlaylist(p)}
+            onEdit={() => setDialog({ playlistId: p.id })}
           />
         ))}
       </LibrarySection>
@@ -192,15 +161,13 @@ export default function LibraryPage() {
         id="lib-artists"
         showAllTo="/library/artists"
         variant="album"
-        count={shown.artists.length}
-        total={favArtists.length}
-        query={query}
+        count={favArtists.length}
         onAdd={() => setDialog('artists')}
         addLabel="Choose favourite artists"
         emptyMessage="You don’t have a favorite artist ..."
         emptyAction="Choose artists"
       >
-        {shown.artists.map((a) => (
+        {favArtists.map((a) => (
           <MediaCard key={a.id} variant="album" title={a.name} />
         ))}
       </LibrarySection>

@@ -282,3 +282,79 @@
   .hero__title { font-size: 22px; }
   .empty__message { font-size: var(--fs-lg); }
 }
+
+/* --- Playlist tile: play primary, edit secondary -----------------------
+   Both affordances stay reachable by keyboard: the Edit button is revealed
+   by :focus-within as well as :hover, so tabbing to it makes it visible.
+   ---------------------------------------------------------------------- */
+
+.card--playlist {
+  position: relative;
+}
+
+.card--playlist .card__button:disabled {
+  cursor: default;
+}
+
+.card__play,
+.card__edit {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+
+.card__play {
+  right: var(--sp-3);
+  bottom: var(--sp-3);
+  width: 36px;
+  height: 36px;
+  color: var(--color-app-bg);
+  background: var(--color-text-cream);
+  transform: translateY(4px);
+  pointer-events: none;
+}
+
+.card__edit {
+  top: var(--sp-2);
+  right: var(--sp-2);
+  width: 32px;
+  height: 32px;
+  color: var(--color-text-cream);
+  background: color-mix(in srgb, var(--color-app-bg) 70%, transparent);
+  backdrop-filter: blur(6px);
+  /* Rotated so the shared Plus glyph reads as "edit contents", not "add". */
+  transform: rotate(45deg);
+}
+
+.card--playlist:hover .card__play,
+.card--playlist:focus-within .card__play {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card--playlist:hover .card__edit,
+.card--playlist:focus-within .card__edit,
+.card__edit:focus-visible {
+  opacity: 1;
+}
+
+.card__edit:hover {
+  background: var(--color-surface);
+}
+
+/* Touch has no hover, so both controls stay visible on coarse pointers. */
+@media (hover: none) {
+  .card--playlist .card__play,
+  .card--playlist .card__edit {
+    opacity: 1;
+    transform: none;
+  }
+  .card--playlist .card__edit {
+    transform: rotate(45deg);
+  }
+}

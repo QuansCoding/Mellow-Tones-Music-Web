@@ -20,8 +20,6 @@ export default function LibrarySection({
   showAllTo,
   variant,
   count,
-  total,
-  query,
   onAdd,
   addLabel,
   emptyMessage,
@@ -30,20 +28,14 @@ export default function LibrarySection({
 }) {
   const gridClass = variant === 'artist' ? 'grid--fill-wide' : 'grid--fill';
 
-  // "You own nothing" and "your search excluded everything" are different
-  // states and must not look the same — otherwise a filter reads as data loss.
-  const genuinelyEmpty = total === 0;
-  const filteredOut = total > 0 && count === 0;
+  // Nothing filters this page any more, so "empty" has only one meaning again.
+  const isEmpty = count === 0;
 
   return (
     <section className="section" aria-labelledby={id}>
-      <SectionHeader title={title} id={id} showAllTo={total > 0 ? showAllTo : undefined} />
+      <SectionHeader title={title} id={id} showAllTo={count > 0 ? showAllTo : undefined} />
 
-      {filteredOut && (
-        <p className="section__note">No matches in {title.toLowerCase()} for “{query}”.</p>
-      )}
-
-      {!filteredOut && genuinelyEmpty && emptyMessage && (
+      {isEmpty && emptyMessage && (
         <div className="empty">
           <p className="empty__message">{emptyMessage}</p>
           {emptyAction && (
@@ -54,7 +46,7 @@ export default function LibrarySection({
         </div>
       )}
 
-      {!filteredOut && !(genuinelyEmpty && emptyMessage) && (
+      {!(isEmpty && emptyMessage) && (
         <ul className={`grid ${gridClass}`}>
           <AddCard variant={variant} label={addLabel} onClick={onAdd} />
           {children}

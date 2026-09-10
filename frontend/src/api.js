@@ -82,3 +82,12 @@ export const addSongToPlaylist = (playlistId, songId) =>
   API.put(`/me/playlists/${playlistId}/songs/${songId}`);
 export const removeSongFromPlaylist = (playlistId, songId) =>
   API.delete(`/me/playlists/${playlistId}/songs/${songId}`);
+
+// ---------------------------------------------------------------------------
+// Search
+// ---------------------------------------------------------------------------
+
+/** Mixed search. Playlists come back only when signed in, and only ever the
+ *  caller's own — the server never searches anyone else's. */
+export const searchAll = (q, limit = 6) =>
+  API.get('/search', { params: { q, limit } });
