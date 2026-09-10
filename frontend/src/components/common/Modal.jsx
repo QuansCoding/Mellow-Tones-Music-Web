@@ -14,7 +14,16 @@ export default function Modal({ open, onClose, title, children }) {
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
+    if (open && !dialog.open) {
+      dialog.showModal();
+      // React applies `autoFocus` during commit, while the dialog is still
+      // closed and inert, so the focus is dropped and showModal() lands on
+      // the first focusable element instead — the close button. A picker
+      // whose whole purpose is typing must not open with the caret there.
+      // React 19 never writes an `autofocus` attribute, so children opt in
+      // with data-autofocus and this re-applies it after showModal().
+      dialog.querySelector('[data-autofocus]')?.focus();
+    }
     if (!open && dialog.open) dialog.close();
   }, [open]);
 

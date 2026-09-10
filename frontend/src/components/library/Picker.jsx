@@ -1,50 +1,42 @@
 import Modal from '../common/Modal';
+import SearchAddList from './SearchAddList';
 
 /**
- * Multi-select picker used to fill Liked Songs, Playlists and Favourite
- * Artists. Rows are toggles rather than a submit-based form, so the library
- * updates live behind the dialog and there is no save step to forget.
+ * Type-to-find picker for Liked Songs and Favourite Artists.
+ *
+ * It used to render the entire catalogue in one list, which is fine at three
+ * songs and unusable at three hundred. Rows are still toggles rather than a
+ * submit-based form, so the library updates live behind the dialog and there
+ * is no save step to forget.
+ *
+ * `countLabel` keeps the running total visible: after adding eight songs while
+ * scrolling, "12 liked songs" is the only feedback that says how far you got.
+ *
+ * Modal unmounts its children when closed, so the query resets on reopen with
+ * no effect needed here.
  */
 export default function Picker({
   open,
   onClose,
   title,
-  items,
+  kind,
+  placeholder,
+  prompt,
+  countLabel,
   isSelected,
   onToggle,
-  emptyNote,
 }) {
   return (
     <Modal open={open} onClose={onClose} title={title}>
-      {items.length === 0 ? (
-        <p className="picker__empty">{emptyNote}</p>
-      ) : (
-        <ul className="picker__list">
-          {items.map((item) => {
-            const selected = isSelected(item.id);
-            return (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  className={`picker__row${selected ? ' picker__row--on' : ''}`}
-                  aria-pressed={selected}
-                  onClick={() => onToggle(item.id)}
-                >
-                  <span className="picker__text">
-                    <span className="picker__primary">{item.primary}</span>
-                    {item.secondary && (
-                      <span className="picker__secondary">{item.secondary}</span>
-                    )}
-                  </span>
-                  <span className="picker__mark" aria-hidden="true">
-                    {selected ? 'Added' : 'Add'}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {countLabel && <p className="picker__count">{countLabel}</p>}
+      <SearchAddList
+        kind={kind}
+        placeholder={placeholder}
+        prompt={prompt}
+        isSelected={isSelected}
+        onToggle={onToggle}
+        autoFocus
+      />
     </Modal>
   );
 }

@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { searchAll } from '../../api';
 import { usePlayer } from '../player/playerContext';
 import { usePlayPlaylist } from '../../hooks/usePlayPlaylist';
-import { MapPin, Play, Heart, Menu } from '../icons/Icons';
+import { useLibrary } from '../library/libraryContext';
+import AddToPlaylistDialog from '../library/AddToPlaylistDialog';
+import { MapPin, Play, Heart, Menu, Plus } from '../icons/Icons';
 import './search.css';
 
 const DEBOUNCE_MS = 180;
@@ -26,6 +28,11 @@ export default function SearchBox() {
   const navigate = useNavigate();
   const { playSong } = usePlayer();
   const playPlaylist = usePlayPlaylist();
+  const { isLiked, toggleLike, isFavoriteArtist, toggleArtist, isSignedIn } = useLibrary();
+
+  // One dialog for the whole panel rather than one per row: five hidden
+  // <dialog> elements in a dropdown is waste, and Alt+P needs a single target.
+  const [addFor, setAddFor] = useState(null);
 
   const listboxId = useId();
   const optionId = (i) => `${listboxId}-opt-${i}`;
@@ -110,7 +117,8 @@ export default function SearchBox() {
         navigate(`/search?q=${encodeURIComponent(entry.item.name)}`);
         setQuery(entry.item.name);
       } else if (entry.type === 'playlists') {
-        if (!playPlaylist(entry.item)) navigate('/library');
+        // restart: picking a result is a choice to play it, not a pause.
+        if (!playPlaylist(entry.item, { restart: true })) navigate('/library');
       } else {
         navigate(`/search?q=${encodeURIComponent(term)}`);
       }
@@ -118,7 +126,41 @@ export default function SearchBox() {
     [close, navigate, playPlaylist, playSong, results.songs, term],
   );
 
+  /* --- Row actions ------------------------------------------------------
+     These act on a row without choosing it, so they never call `choose`.
+     Liking needs an account, so an anonymous visitor goes to sign in — the
+     same call the Trending heart makes. */
+  const likeEntry = useCallback(
+    (entry) => {
+      if (!entry) return;
+      if (!isSignedIn) { close(); navigate('/login'); return; }
+      if (entry.type === 'songs') toggleLike(entry.item.id);
+      else if (entry.type === 'artists') toggleArtist(entry.item);
+    },
+    [isSignedIn, close, navigate, toggleLike, toggleArtist],
+  );
+
+  const addEntry = useCallback(
+    (entry) => {
+      if (!entry || entry.type !== 'songs') return;
+      if (!isSignedIn) { close(); navigate('/login'); return; }
+      setAddFor(entry.item);
+    },
+    [isSignedIn, close, navigate],
+  );
+
   function onKeyDown(e) {
+    // Alt-modified so they cannot collide with typing into the combobox.
+    if (e.altKey && (e.key === 'l' || e.key === 'L')) {
+      e.preventDefault();
+      likeEntry(active >= 0 ? flat[active] : null);
+      return;
+    }
+    if (e.altKey && (e.key === 'p' || e.key === 'P')) {
+      e.preventDefault();
+      addEntry(active >= 0 ? flat[active] : null);
+      return;
+    }
     if (e.key === 'Escape') {
       close();
       return;
@@ -181,6 +223,8 @@ export default function SearchBox() {
           aria-controls={listboxId}
           aria-autocomplete="list"
           aria-activedescendant={active >= 0 ? optionId(active) : undefined}
+          aria-keyshortcuts="Alt+L Alt+P"
+          aria-describedby={showList ? `${listboxId}-hint` : undefined}
           autoComplete="off"
           value={query}
           onChange={(e) => {
@@ -208,37 +252,81 @@ export default function SearchBox() {
                 {group.items.map((item) => {
                   cursor += 1;
                   const i = cursor;
+                  const entry = { type: group.key, item };
+                  const liked =
+                    group.key === 'songs'
+                      ? isLiked(item.id)
+                      : group.key === 'artists' && isFavoriteArtist(item.id);
                   return (
-                    <li
-                      key={`${group.key}-${item.id}`}
-                      id={optionId(i)}
-                      role="option"
-                      aria-selected={i === active}
-                      className={`search__option${i === active ? ' search__option--active' : ''}`}
-                      // mousedown, not click: click fires after blur, which
-                      // would close the panel before the choice registers.
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        choose({ type: group.key, item });
-                      }}
-                      onMouseEnter={() => setActive(i)}
-                    >
-                      <span className="search__option-icon" aria-hidden="true">
-                        {group.key === 'songs' && <Play size={13} />}
-                        {group.key === 'artists' && <Heart size={13} />}
-                        {group.key === 'playlists' && <Menu size={13} />}
-                      </span>
-                      <span className="search__option-text">
-                        <span className="search__option-primary">
-                          {group.key === 'songs' ? item.title : item.name}
+                    // The row is presentational; the option inside it is the
+                    // real listbox child. The action buttons must NOT live
+                    // inside that option — ARIA gives `option` presentational
+                    // children, so a nested button is stripped from the
+                    // accessibility tree entirely. They stay a pointer
+                    // affordance (aria-hidden, not tabbable) and the keyboard
+                    // path is Alt+L / Alt+P on the highlighted row.
+                    <li key={`${group.key}-${item.id}`} className="search__row" role="presentation">
+                      <div
+                        id={optionId(i)}
+                        role="option"
+                        aria-selected={i === active}
+                        className={`search__option${i === active ? ' search__option--active' : ''}`}
+                        // mousedown, not click: click fires after blur, which
+                        // would close the panel before the choice registers.
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          choose(entry);
+                        }}
+                        onMouseEnter={() => setActive(i)}
+                      >
+                        <span className="search__option-icon" aria-hidden="true">
+                          {group.key === 'songs' && <Play size={13} />}
+                          {group.key === 'artists' && <Heart size={13} />}
+                          {group.key === 'playlists' && <Menu size={13} />}
                         </span>
-                        <span className="search__option-secondary">
-                          {group.key === 'songs' && item.artist}
-                          {group.key === 'artists' && 'Artist'}
-                          {group.key === 'playlists' &&
-                            `${item.song_ids.length} ${item.song_ids.length === 1 ? 'song' : 'songs'}`}
+                        <span className="search__option-text">
+                          <span className="search__option-primary">
+                            {group.key === 'songs' ? item.title : item.name}
+                          </span>
+                          <span className="search__option-secondary">
+                            {group.key === 'songs' && item.artist}
+                            {group.key === 'artists' && 'Artist'}
+                            {group.key === 'playlists' &&
+                              `${item.song_ids.length} ${item.song_ids.length === 1 ? 'song' : 'songs'}`}
+                          </span>
                         </span>
-                      </span>
+                      </div>
+
+                      {group.key !== 'playlists' && (
+                        // preventDefault keeps focus in the input, so the
+                        // panel stays open and you can keep typing.
+                        <div
+                          className="search__row-actions"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onMouseEnter={() => setActive(i)}
+                        >
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            aria-hidden="true"
+                            className={`search__act${liked ? ' search__act--on' : ''}`}
+                            onClick={() => likeEntry(entry)}
+                          >
+                            <Heart size={14} filled={liked} />
+                          </button>
+                          {group.key === 'songs' && (
+                            <button
+                              type="button"
+                              tabIndex={-1}
+                              aria-hidden="true"
+                              className="search__act"
+                              onClick={() => addEntry(entry)}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </li>
                   );
                 })}
@@ -272,7 +360,22 @@ export default function SearchBox() {
             );
           })()}
         </ul>
+
+        {/* Named for both eyes and screen readers: the row buttons are
+            deliberately not tabbable, so the shortcut is the keyboard path
+            and has to be discoverable. */}
+        {flat.length > 1 && (
+          <p className="search__hint" id={`${listboxId}-hint`}>
+            <kbd>Alt</kbd>+<kbd>L</kbd> like · <kbd>Alt</kbd>+<kbd>P</kbd> add to playlist
+          </p>
+        )}
       </div>
+
+      <AddToPlaylistDialog
+        open={Boolean(addFor)}
+        onClose={() => setAddFor(null)}
+        song={addFor}
+      />
     </div>
   );
 }

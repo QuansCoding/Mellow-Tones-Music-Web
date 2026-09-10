@@ -34,19 +34,19 @@ export default function LoginForm({ onLoginSuccess }) {
         <h2>{mode === 'login' ? 'Log in' : 'Create account'}</h2>
         {error && <div className="error">{error}</div>}
 
-        <label>Username</label>
-        <input value={username} onChange={(e) => setUsername(e.target.value)} required />
+        <label className="field-label">Username</label>
+        <input className="field" value={username} onChange={(e) => setUsername(e.target.value)} required />
 
         {mode === 'register' && (
           <>
-            <label>Email</label>
-            <input type="email" value={email}
+            <label className="field-label">Email</label>
+            <input className="field" type="email" value={email}
                    onChange={(e) => setEmail(e.target.value)} required />
           </>
         )}
 
-        <label>Password</label>
-        <input type="password" value={password} minLength={8}
+        <label className="field-label">Password</label>
+        <input className="field" type="password" value={password} minLength={8}
                onChange={(e) => setPassword(e.target.value)} required />
 
         <button className="button button-primary" disabled={loading}>

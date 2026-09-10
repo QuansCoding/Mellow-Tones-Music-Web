@@ -41,14 +41,14 @@ export default function UploadForm({ onUploaded }) {
       <h2>Upload a song</h2>
       {error && <div className="error">{error}</div>}
 
-      <label>Title</label>
-      <input value={title} onChange={(e) => setTitle(e.target.value)} required />
+      <label className="field-label">Title</label>
+      <input className="field" value={title} onChange={(e) => setTitle(e.target.value)} required />
 
-      <label>Artist</label>
-      <input value={artist} onChange={(e) => setArtist(e.target.value)} required />
+      <label className="field-label">Artist</label>
+      <input className="field" value={artist} onChange={(e) => setArtist(e.target.value)} required />
 
-      <label>Audio file (MP3, WAV, M4A — max 15 MB)</label>
-      <input type="file" accept="audio/*" onChange={handleFile} required />
+      <label className="field-label">Audio file (MP3, WAV, M4A — max 15 MB)</label>
+      <input className="field" type="file" accept="audio/*" onChange={handleFile} required />
       {duration > 0 && <p className="hint">Detected length: {duration}s</p>}
 
       <button className="button button-primary" disabled={loading || !file}>

@@ -12,6 +12,11 @@ import Artwork from '../common/Artwork';
  * Passing `onClick` turns the whole tile into one button rather than adding a
  * separate hit target, which keeps the label and the artwork a single thing to
  * a screen reader and to a pointer.
+ *
+ * `actions` overlays secondary controls — a like heart, add-to-playlist — as
+ * *siblings* of that button, never inside it: a button nested in a button is
+ * invalid HTML and browsers resolve it unpredictably. Same arrangement the
+ * playlist tile uses for its play button.
  */
 export default function MediaCard({
   variant,
@@ -20,6 +25,7 @@ export default function MediaCard({
   artSrc,
   onClick,
   actionLabel,
+  actions,
   active = false,
 }) {
   const body = (
@@ -46,6 +52,7 @@ export default function MediaCard({
       ) : (
         body
       )}
+      {actions && <div className="card__actions">{actions}</div>}
     </li>
   );
 }

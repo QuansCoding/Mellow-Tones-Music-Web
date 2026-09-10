@@ -92,6 +92,23 @@ export default function PlayerProvider({ children }) {
     else audio.pause();
   }, [current]);
 
+  /**
+   * Play this song, or pause/resume it if it is already the current track.
+   *
+   * Every surface that starts a song wants exactly this, and until now each
+   * one called playSong directly — so pressing an already-playing tile
+   * restarted it instead of pausing. Trending and the playlist rows had each
+   * hand-rolled the check; the rest had not. Transport behaviour belongs in
+   * the transport, once.
+   */
+  const playOrToggle = useCallback(
+    (song, list) => {
+      if (song && current?.id === song.id) toggle();
+      else if (song) playSong(song, list);
+    },
+    [current, toggle, playSong],
+  );
+
   const next = useCallback(() => {
     setIndex((i) => (i + 1 < queue.length ? i + 1 : i));
   }, [queue.length]);
@@ -148,6 +165,7 @@ export default function PlayerProvider({ children }) {
       sheetOpen,
       hasTrack: Boolean(current),
       playSong,
+      playOrToggle,
       toggle,
       next,
       prev,
@@ -159,7 +177,7 @@ export default function PlayerProvider({ children }) {
     }),
     [
       current, queue, isPlaying, currentTime, duration, volume, sheetOpen,
-      playSong, toggle, next, prev, seek, setVolume, nudgeVolume,
+      playSong, playOrToggle, toggle, next, prev, seek, setVolume, nudgeVolume,
     ],
   );
 

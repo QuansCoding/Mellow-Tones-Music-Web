@@ -4,6 +4,8 @@ import { searchAll } from '../api';
 import { usePlayer } from '../components/player/playerContext';
 import { usePlayPlaylist } from '../hooks/usePlayPlaylist';
 import MediaCard from '../components/home/MediaCard';
+import LikeButton from '../components/library/LikeButton';
+import AddToPlaylistButton from '../components/library/AddToPlaylistButton';
 import SectionHeader from '../components/home/SectionHeader';
 import '../components/home/home.css';
 import '../components/library/library.css';
@@ -16,7 +18,7 @@ const EMPTY_RESULTS = { songs: [], artists: [], playlists: [] };
 export default function SearchPage() {
   const [params] = useSearchParams();
   const query = params.get('q') ?? '';
-  const { playSong, current } = usePlayer();
+  const { playOrToggle, current, isPlaying } = usePlayer();
   const playPlaylist = usePlayPlaylist();
 
   const [fetched, setFetched] = useState(EMPTY_RESULTS);
@@ -92,8 +94,18 @@ export default function SearchPage() {
                 subtitle={s.artist}
                 active={current?.id === s.id}
                 // Queue the whole result set behind the one you picked.
-                onClick={() => playSong(s, results.songs)}
-                actionLabel={`Play ${s.title} by ${s.artist}`}
+                onClick={() => playOrToggle(s, results.songs)}
+                actionLabel={
+                  current?.id === s.id && isPlaying
+                    ? `Pause ${s.title}`
+                    : `Play ${s.title} by ${s.artist}`
+                }
+                actions={
+                  <>
+                    <LikeButton song={s} />
+                    <AddToPlaylistButton song={s} />
+                  </>
+                }
               />
             ))}
           </ul>
@@ -105,7 +117,12 @@ export default function SearchPage() {
           <SectionHeader title="Artists" id="res-artists" />
           <ul className="grid grid--fill">
             {results.artists.map((a) => (
-              <MediaCard key={a.id} variant="album" title={a.name} />
+              <MediaCard
+                key={a.id}
+                variant="album"
+                title={a.name}
+                actions={<LikeButton artist={a} />}
+              />
             ))}
           </ul>
         </section>

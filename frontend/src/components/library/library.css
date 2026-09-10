@@ -51,6 +51,71 @@
   color: var(--color-accent);
 }
 
+/* --- Tile actions ------------------------------------------------------
+   Secondary controls overlaid on a tile: like, add to playlist. Revealed on
+   hover and :focus-within so they are reachable by keyboard, and pinned
+   visible whenever the heart is filled — a filled heart is *state*, not just
+   an action, and on the Liked Songs page it is the only way back out.
+   ---------------------------------------------------------------------- */
+
+.card {
+  position: relative;
+}
+
+.card__actions {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  display: flex;
+  gap: 2px;
+}
+
+/* `> button`, not `> *`. A control here may render more than its button —
+   AddToPlaylistButton emits its <dialog> as a sibling — and a universal
+   selector styled that dialog too, including `display: flex`, which defeats
+   the UA's `display: none` on a *closed* dialog. The result was a 391px
+   invisible panel laid out inside a 183px tile: it pushed the heart to the
+   middle of the card and became the click target at the top-right corner,
+   which is exactly where you aim for the heart. Left closed and unstyled the
+   dialog takes no space, and showModal() still promotes it to the top layer
+   when it opens. */
+.card__actions > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--color-text-cream);
+  background: color-mix(in srgb, var(--color-app-bg) 72%, transparent);
+  backdrop-filter: blur(6px);
+  border-radius: var(--radius-pill);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+
+.card:hover .card__actions > button,
+.card:focus-within .card__actions > button,
+.card__actions > .likebtn--on {
+  opacity: 1;
+}
+
+.card__actions > button:hover {
+  background: var(--color-surface);
+}
+
+.card__actions > .likebtn--on {
+  color: var(--color-accent);
+}
+
+/* Touch has no hover, so the controls stay put on coarse pointers. */
+@media (hover: none) {
+  .card__actions > button {
+    opacity: 1;
+  }
+}
+
 /* --- The "+" tile ------------------------------------------------------
    Shares the grid track and aspect ratio with MediaCard. A dashed edge
    reads as "a slot to fill" rather than "a thing you already own", which
@@ -283,78 +348,391 @@
   .empty__message { font-size: var(--fs-lg); }
 }
 
-/* --- Playlist tile: play primary, edit secondary -----------------------
-   Both affordances stay reachable by keyboard: the Edit button is revealed
-   by :focus-within as well as :hover, so tabbing to it makes it visible.
+/* --- Playlist tile: open primary, play secondary -----------------------
+   The card body opens the playlist's page; the play button sits over the
+   artwork. Revealed on :hover and :focus-within so it is reachable by
+   keyboard, and pinned visible while this playlist is the one playing.
    ---------------------------------------------------------------------- */
 
 .card--playlist {
   position: relative;
 }
 
-.card--playlist .card__button:disabled {
-  cursor: default;
-}
-
-.card__play,
-.card__edit {
+.card__play {
   position: absolute;
+  right: var(--sp-3);
+  bottom: var(--sp-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-pill);
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease),
-              transform var(--dur-fast) var(--ease);
-}
-
-.card__play {
-  right: var(--sp-3);
-  bottom: var(--sp-3);
   width: 36px;
   height: 36px;
   color: var(--color-app-bg);
   background: var(--color-text-cream);
+  border-radius: var(--radius-pill);
+  opacity: 0;
   transform: translateY(4px);
-  pointer-events: none;
-}
-
-.card__edit {
-  top: var(--sp-2);
-  right: var(--sp-2);
-  width: 32px;
-  height: 32px;
-  color: var(--color-text-cream);
-  background: color-mix(in srgb, var(--color-app-bg) 70%, transparent);
-  backdrop-filter: blur(6px);
-  /* Rotated so the shared Plus glyph reads as "edit contents", not "add". */
-  transform: rotate(45deg);
+  transition: opacity var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease);
 }
 
 .card--playlist:hover .card__play,
-.card--playlist:focus-within .card__play {
+.card--playlist:focus-within .card__play,
+.card__play:focus-visible,
+/* Whatever is playing keeps its control on screen, so pausing never means
+   hunting for a button that only exists on hover. */
+.card--active .card__play {
   opacity: 1;
   transform: translateY(0);
 }
 
-.card--playlist:hover .card__edit,
-.card--playlist:focus-within .card__edit,
-.card__edit:focus-visible {
-  opacity: 1;
+.card__play:hover:not(:disabled) {
+  background: var(--color-accent);
 }
 
-.card__edit:hover {
-  background: var(--color-surface);
+.card__play:disabled {
+  cursor: default;
+  opacity: 0;
+}
+
+.card--playlist:hover .card__play:disabled,
+.card--playlist:focus-within .card__play:disabled {
+  opacity: 0.45;
 }
 
 /* Touch has no hover, so both controls stay visible on coarse pointers. */
 @media (hover: none) {
-  .card--playlist .card__play,
-  .card--playlist .card__edit {
+  .card--playlist .card__play {
     opacity: 1;
     transform: none;
   }
-  .card--playlist .card__edit {
-    transform: rotate(45deg);
+  .card--playlist .card__play:disabled {
+    opacity: 0.45;
   }
+}
+
+/* ============================================================
+   Finder — type-to-search list, shared by the pickers and the
+   playlist page's add panel
+   ============================================================ */
+
+.finder {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+/* Fixed above the scrolling result list, so the field never scrolls away
+   mid-search. */
+.finder__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 40px;
+}
+
+/* Centred against the input itself rather than left to its static position,
+   which drifted to the bottom the moment anything changed the field's
+   height. */
+.finder__icon {
+  position: absolute;
+  top: 50%;
+  left: var(--sp-3);
+  display: flex;
+  transform: translateY(-50%);
+  color: var(--color-icon);
+  pointer-events: none;
+}
+
+.finder__input {
+  width: 100%;
+  height: 100%;
+  /* Bare `input` is deliberately unstyled app-wide, so this needs its own
+     rule; the leading padding clears the icon. */
+  padding: 0 var(--sp-3) 0 var(--sp-8);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-cream);
+  background: var(--color-search-bg);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.finder__input::placeholder {
+  color: var(--color-accent);
+  opacity: 1;
+}
+
+.finder__input:hover {
+  border-color: var(--color-hairline);
+}
+
+/* The picker opens with this field focused, so the ring is the first thing
+   you see. --color-focus is a near-white pink that reads as an error at that
+   size; the accent says "ready to type" while still clearing 3:1 against the
+   field. Kept as a real ring, not removed — keyboard users need it. */
+.finder__input:focus-visible {
+  border-color: var(--color-accent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.finder__status {
+  flex-shrink: 0;
+  min-height: 1.2em;
+  padding: var(--sp-2) 0 0;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.finder__prompt {
+  padding: var(--sp-5) var(--sp-2);
+  font-size: var(--fs-sm);
+  text-align: center;
+  color: var(--color-text-soft);
+}
+
+.finder__more {
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: var(--sp-2);
+  padding: var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-accent);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.finder__more:hover:not(:disabled) {
+  background: var(--color-row-hover);
+  color: var(--color-text-cream);
+}
+
+.finder__new {
+  flex-shrink: 0;
+  margin-top: var(--sp-3);
+}
+
+.finder__new .finder__input {
+  height: 40px;
+  padding-left: var(--sp-3);
+}
+
+.finder__new-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+/* Running total, so progress is visible after several adds. */
+.picker__count {
+  flex-shrink: 0;
+  margin-bottom: var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--color-text-soft);
+}
+
+/* ============================================================
+   Playlist page
+   ============================================================ */
+
+.plhead {
+  margin-bottom: var(--sp-6);
+}
+
+.plhead__title {
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.plhead__rename {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.plhead__rename .finder__input {
+  flex: 1 1 220px;
+  height: 40px;
+  padding-left: var(--sp-3);
+}
+
+.plhead__meta {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+.plhead__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+/* Rows, not tiles: a playlist is ordered, and titles are what you scan.
+   Deliberately not .trow, which is coupled to rank/plays/album columns. */
+.plrows {
+  display: flex;
+  flex-direction: column;
+}
+
+.plrow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.plrow:hover {
+  background: var(--color-row-hover);
+}
+
+.plrow--current .plrow__title {
+  color: var(--color-accent);
+}
+
+.plrow__main {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+}
+
+/* The index and the play icon share one slot, the way the Trending rows swap
+   rank for play — the icon is taken out of flow and laid over the number, so
+   the swap costs no extra column and shifts nothing. */
+.plrow__index,
+.plrow__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-soft);
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.plrow__icon {
+  position: absolute;
+  left: var(--sp-3);
+  opacity: 0;
+  color: var(--color-text-cream);
+}
+
+.plrow:hover .plrow__index,
+.plrow--current .plrow__index,
+.plrow__main:focus-visible .plrow__index {
+  opacity: 0;
+}
+
+.plrow:hover .plrow__icon,
+.plrow--current .plrow__icon,
+.plrow__main:focus-visible .plrow__icon {
+  opacity: 1;
+}
+
+.plrow__art {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+.plrow__text {
+  min-width: 0;
+  flex: 1;
+}
+
+.plrow__title,
+.plrow__artist {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plrow__title {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.plrow__artist {
+  font-size: var(--fs-xs);
+  color: var(--color-text-soft);
+}
+
+.plrow__dur {
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-soft);
+}
+
+.plrow__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  margin-right: var(--sp-2);
+  color: var(--color-text-soft);
+  border-radius: var(--radius-pill);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease);
+}
+
+.plrow:hover .plrow__remove,
+.plrow__remove:focus-visible {
+  opacity: 1;
+}
+
+.plrow__remove:hover {
+  background: var(--color-surface);
+  color: var(--color-text-cream);
+}
+
+@media (hover: none) {
+  .plrow__remove {
+    opacity: 1;
+  }
+}
+
+/* Now-playing sheet's add button, matching .sheet__close. */
+.sheet__add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  color: var(--color-text-cream);
+  border-radius: var(--radius-pill);
+}
+
+.sheet__add:disabled {
+  opacity: 0.4;
 }

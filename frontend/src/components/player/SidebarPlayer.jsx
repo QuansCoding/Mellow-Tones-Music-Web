@@ -3,8 +3,9 @@ import { useScrubber } from './useScrubber';
 import { formatTime } from '../../utils/format';
 import Artwork from '../common/Artwork';
 import {
-  Play, Pause, SkipBack, SkipForward, VolumeUp, VolumeDown, Plus,
+  Play, Pause, SkipBack, SkipForward, VolumeUp, VolumeDown,
 } from '../icons/Icons';
+import AddToPlaylistButton from '../library/AddToPlaylistButton';
 import './player.css';
 
 /**
@@ -28,9 +29,8 @@ export default function SidebarPlayer() {
     <section className="device" aria-label="Music player">
       <div className="device__screen">
         <Artwork alt={current ? `Cover art for ${current.title}` : 'No track loaded'} />
-        <button type="button" className="device__add" aria-label="Add to playlist">
-          <Plus size={12} />
-        </button>
+        {/* The Figma drew this button; nothing was ever wired to it. */}
+        <AddToPlaylistButton song={current} className="device__add" size={12} />
       </div>
 
       <label className="sr-only" htmlFor="device-seek">Seek</label>

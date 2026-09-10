@@ -37,6 +37,9 @@ export const login = (username, password) =>
   API.post('/auth/login', new URLSearchParams({ username, password }));
 
 export const fetchSongs  = () => API.get('/songs');
+// The Manage page reads this: only the songs the signed-in user uploaded.
+export const fetchMySongs = () => API.get('/songs/mine');
+export const updateSong  = (id, changes) => API.patch(`/songs/${id}`, changes);
 export const deleteSong  = (id) => API.delete(`/songs/${id}`);
 
 export const uploadSong = (title, artist, duration_sec, file) => {
@@ -89,5 +92,5 @@ export const removeSongFromPlaylist = (playlistId, songId) =>
 
 /** Mixed search. Playlists come back only when signed in, and only ever the
  *  caller's own — the server never searches anyone else's. */
-export const searchAll = (q, limit = 6) =>
-  API.get('/search', { params: { q, limit } });
+export const searchAll = (q, limit = 6, offset = 0) =>
+  API.get('/search', { params: { q, limit, offset } });

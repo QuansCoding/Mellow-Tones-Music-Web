@@ -1,13 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/authContext';
 import { useCatalog } from '../components/catalog/catalogContext';
 import { useLibrary } from '../components/library/libraryContext';
 import { usePlayer } from '../components/player/playerContext';
-import { usePlayPlaylist } from '../hooks/usePlayPlaylist';
+import { usePlayPlaylist, usePlaylistPlayback } from '../hooks/usePlayPlaylist';
 import LibrarySection from '../components/library/LibrarySection';
 import LibraryHero from '../components/library/LibraryHero';
 import SignInPrompt from '../components/library/SignInPrompt';
 import PlaylistCard from '../components/library/PlaylistCard';
+import LikeButton from '../components/library/LikeButton';
+import AddToPlaylistButton from '../components/library/AddToPlaylistButton';
 import Picker from '../components/library/Picker';
 import PlaylistDialog from '../components/library/PlaylistDialog';
 import MediaCard from '../components/home/MediaCard';
@@ -15,41 +18,20 @@ import '../components/home/home.css';
 import '../components/library/library.css';
 
 export default function LibraryPage() {
+  const navigate = useNavigate();
   const { isLoggedIn, ready } = useAuth();
-  const { songs, byId, resolve } = useCatalog();
-  const { playSong, current } = usePlayer();
+  const { byId } = useCatalog();
+  const { playOrToggle, current, isPlaying } = usePlayer();
   const playPlaylist = usePlayPlaylist();
+  const playbackOf = usePlaylistPlayback();
   const lib = useLibrary();
 
-  // null | 'likes' | 'artists' | 'playlist' | { playlistId }
+  // null | 'likes' | 'artists' | 'playlist'
   const [dialog, setDialog] = useState(null);
-
-  /** Artists are rows now, so the catalogue yields {id, name} pairs and
-   *  favourites are keyed by id rather than by a spelling of the name. */
-  const allArtists = useMemo(() => {
-    const seen = new Map();
-    for (const s of songs) {
-      if (!seen.has(s.artist_id)) seen.set(s.artist_id, { id: s.artist_id, name: s.artist });
-    }
-    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [songs]);
 
   const liked = lib.likes.map((id) => byId[id]).filter(Boolean);
   const playlists = lib.playlists;
   const favArtists = lib.artists;
-
-  const openPlaylist = playlists.find((p) => p.id === dialog?.playlistId);
-
-  const songItems = songs.map((s) => ({
-    id: s.id,
-    primary: s.title,
-    secondary: s.artist,
-  }));
-
-  const artistItems = allArtists.map((a) => ({ id: a.id, primary: a.name }));
-
-  const noSongsNote =
-    'No songs in the catalogue yet. Upload one from Create → Upload Song.';
 
   const dialogs = (
     <>
@@ -57,28 +39,25 @@ export default function LibraryPage() {
         open={dialog === 'likes'}
         onClose={() => setDialog(null)}
         title="Add to liked songs"
-        items={songItems}
-        isSelected={lib.isLiked}
-        onToggle={lib.toggleLike}
-        emptyNote={noSongsNote}
+        kind="songs"
+        placeholder="Search songs by title or artist"
+        prompt="Start typing to find a song."
+        countLabel={`${liked.length} liked ${liked.length === 1 ? 'song' : 'songs'}`}
+        isSelected={(song) => lib.isLiked(song.id)}
+        onToggle={(song) => lib.toggleLike(song.id)}
       />
       <Picker
         open={dialog === 'artists'}
         onClose={() => setDialog(null)}
         title="Choose favourite artists"
-        items={artistItems}
-        isSelected={lib.isFavoriteArtist}
-        onToggle={(id) => lib.toggleArtist(allArtists.find((a) => a.id === id))}
-        emptyNote={noSongsNote}
-      />
-      <Picker
-        open={Boolean(openPlaylist)}
-        onClose={() => setDialog(null)}
-        title={openPlaylist ? `Songs in “${openPlaylist.name}”` : ''}
-        items={songItems}
-        isSelected={(id) => Boolean(openPlaylist?.songIds.includes(id))}
-        onToggle={(id) => lib.togglePlaylistSong(openPlaylist.id, id)}
-        emptyNote={noSongsNote}
+        kind="artists"
+        placeholder="Search artists by name"
+        prompt="Start typing to find an artist."
+        countLabel={`${favArtists.length} favourite ${favArtists.length === 1 ? 'artist' : 'artists'}`}
+        // /search returns artists as {id, name} — exactly the shape
+        // toggleArtist wants, so no lookup back through the catalogue.
+        isSelected={(artist) => lib.isFavoriteArtist(artist.id)}
+        onToggle={(artist) => lib.toggleArtist(artist)}
       />
       <PlaylistDialog
         open={dialog === 'playlist'}
@@ -97,80 +76,99 @@ export default function LibraryPage() {
     <div className="error" role="alert">{lib.error}</div>
   ) : null;
 
-  if (lib.isEmpty) {
-    return (
-      <>
-        {banner}
-        <LibraryHero
-          onAddSongs={() => setDialog('likes')}
-          onNewPlaylist={() => setDialog('playlist')}
-        />
-        {dialogs}
-      </>
-    );
-  }
-
+  // One return, with the body switched inside it. Two sibling returns put
+  // {dialogs} at a different child index in each branch, so adding your first
+  // liked song — which flips isEmpty — remounted the open dialog and wiped
+  // whatever had been typed into it.
   return (
     <>
       {banner}
 
-      <LibrarySection
-        title="Liked Songs"
-        id="lib-liked"
-        showAllTo="/library/liked"
-        variant="album"
-        count={liked.length}
-        onAdd={() => setDialog('likes')}
-        addLabel="Add liked songs"
-      >
-        {liked.map((s) => (
-          <MediaCard
-            key={s.id}
-            variant="album"
-            title={s.title}
-            subtitle={s.artist}
-            active={current?.id === s.id}
-            onClick={() => playSong(s, liked)}
-            actionLabel={`Play ${s.title} by ${s.artist}`}
-          />
-        ))}
-      </LibrarySection>
+      {lib.isEmpty ? (
+        <LibraryHero
+          onAddSongs={() => setDialog('likes')}
+          onNewPlaylist={() => setDialog('playlist')}
+        />
+      ) : (
+        <>
+        <LibrarySection
+          title="Liked Songs"
+          id="lib-liked"
+          showAllTo="/library/liked"
+          variant="album"
+          count={liked.length}
+          onAdd={() => setDialog('likes')}
+          addLabel="Add liked songs"
+        >
+          {liked.map((s) => (
+            <MediaCard
+              key={s.id}
+              variant="album"
+              title={s.title}
+              subtitle={s.artist}
+              active={current?.id === s.id}
+              onClick={() => playOrToggle(s, liked)}
+              actionLabel={
+                current?.id === s.id && isPlaying
+                  ? `Pause ${s.title}`
+                  : `Play ${s.title} by ${s.artist}`
+              }
+              actions={
+                <>
+                  <LikeButton song={s} />
+                  <AddToPlaylistButton song={s} />
+                </>
+              }
+            />
+          ))}
+        </LibrarySection>
 
-      <LibrarySection
-        title="Playlist"
-        id="lib-playlists"
-        showAllTo="/library/playlists"
-        variant="artist"
-        count={playlists.length}
-        onAdd={() => setDialog('playlist')}
-        addLabel="Create a playlist"
-      >
-        {playlists.map((p) => (
-          <PlaylistCard
-            key={p.id}
-            playlist={p}
-            playable={resolve(p.songIds).length > 0}
-            onPlay={() => playPlaylist(p)}
-            onEdit={() => setDialog({ playlistId: p.id })}
-          />
-        ))}
-      </LibrarySection>
+        <LibrarySection
+          title="Playlist"
+          id="lib-playlists"
+          showAllTo="/library/playlists"
+          variant="artist"
+          count={playlists.length}
+          onAdd={() => setDialog('playlist')}
+          addLabel="Create a playlist"
+        >
+          {playlists.map((p) => {
+            const { playable, playing } = playbackOf(p);
+            return (
+              <PlaylistCard
+                key={p.id}
+                playlist={p}
+                playable={playable}
+                playing={playing}
+                onPlay={() => playPlaylist(p)}
+                onOpen={() => navigate(`/library/playlists/${p.id}`)}
+              />
+            );
+          })}
+        </LibrarySection>
 
-      <LibrarySection
-        title="Favorite Artists"
-        id="lib-artists"
-        showAllTo="/library/artists"
-        variant="album"
-        count={favArtists.length}
-        onAdd={() => setDialog('artists')}
-        addLabel="Choose favourite artists"
-        emptyMessage="You don’t have a favorite artist ..."
-        emptyAction="Choose artists"
-      >
-        {favArtists.map((a) => (
-          <MediaCard key={a.id} variant="album" title={a.name} />
-        ))}
-      </LibrarySection>
+        <LibrarySection
+          title="Favorite Artists"
+          id="lib-artists"
+          showAllTo="/library/artists"
+          variant="album"
+          count={favArtists.length}
+          onAdd={() => setDialog('artists')}
+          addLabel="Choose favourite artists"
+          emptyMessage="You don’t have a favorite artist ..."
+          emptyAction="Choose artists"
+        >
+          {favArtists.map((a) => (
+            <MediaCard
+              key={a.id}
+              variant="album"
+              title={a.name}
+              actions={<LikeButton artist={a} />}
+            />
+          ))}
+        </LibrarySection>
+        </>
+      )}
 
       {dialogs}
     </>

@@ -8,6 +8,7 @@ import StubPage from './pages/StubPage';
 import LoginPage from './pages/LoginPage';
 import UploadPage from './pages/UploadPage';
 import ManagePage from './pages/ManagePage';
+import PlaylistPage from './pages/PlaylistPage';
 import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="library" element={<LibraryPage />} />
         <Route path="library/liked" element={<LibraryListPage kind="liked" />} />
         <Route path="library/playlists" element={<LibraryListPage kind="playlists" />} />
+        <Route path="library/playlists/:playlistId" element={<PlaylistPage />} />
         <Route path="library/artists" element={<LibraryListPage kind="artists" />} />
         {/* Downloads merged into Liked Songs — keep old links working. */}
         <Route path="library/downloads" element={<Navigate to="/library/liked" replace />} />
