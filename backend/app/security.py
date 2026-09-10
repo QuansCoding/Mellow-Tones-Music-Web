@@ -15,6 +15,10 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_MINUTES = 60
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+# auto_error=False so an anonymous request is None rather than a 401 —
+# used by endpoints that serve everyone but return more when signed in.
+oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl="/auth/login", auto_error=False)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -68,3 +72,20 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+def get_current_user_optional(
+    token: str | None = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """The caller, if they are signed in — otherwise None.
+
+    Deliberately never raises: search works signed out, it just cannot include
+    private results like the caller's own playlists.
+    """
+    if not token:
+        return None
+    user_id = decode_token(token)
+    if user_id is None:
+        return None
+    return db.get(User, user_id)

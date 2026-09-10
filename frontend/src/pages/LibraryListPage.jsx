@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
-import { fetchSongs } from '../api';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../components/auth/authContext';
 import { useLibrary } from '../components/library/libraryContext';
 import SignInPrompt from '../components/library/SignInPrompt';
 import { usePlayer } from '../components/player/playerContext';
+import { useCatalog } from '../components/catalog/catalogContext';
+import { usePlayPlaylist } from '../hooks/usePlayPlaylist';
+import PlaylistCard from '../components/library/PlaylistCard';
 import Picker from '../components/library/Picker';
 import PlaylistDialog from '../components/library/PlaylistDialog';
 import MediaCard from '../components/home/MediaCard';
@@ -20,43 +22,20 @@ const KINDS = {
 /** The destination behind each section's "Show All" — the same tiles, uncapped. */
 export default function LibraryListPage({ kind }) {
   const config = KINDS[kind];
-  const { query } = useOutletContext();
   const { isLoggedIn, ready } = useAuth();
   const { playSong, current } = usePlayer();
+  const { songs, byId, resolve } = useCatalog();
+  const playPlaylist = usePlayPlaylist();
   const lib = useLibrary();
 
-  const [songs, setSongs] = useState([]);
   const [dialog, setDialog] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchSongs()
-      .then((res) => { if (!cancelled) setSongs(res.data); })
-      .catch(() => { if (!cancelled) setSongs([]); });
-    return () => { cancelled = true; };
-  }, []);
-
-  const byId = useMemo(
-    () => Object.fromEntries(songs.map((s) => [s.id, s])),
-    [songs],
-  );
-
-  const q = query.trim().toLowerCase();
 
   const items =
     kind === 'artists'
-      ? lib.artists.filter((a) => !q || a.name.toLowerCase().includes(q))
+      ? lib.artists
       : kind === 'playlists'
-        ? lib.playlists.filter((p) => !q || p.name.toLowerCase().includes(q))
-        : lib.likes
-            .map((id) => byId[id])
-            .filter(Boolean)
-            .filter(
-              (s) =>
-                !q ||
-                s.title.toLowerCase().includes(q) ||
-                s.artist.toLowerCase().includes(q),
-            );
+        ? lib.playlists
+        : lib.likes.map((id) => byId[id]).filter(Boolean);
 
   const openPlaylist = lib.playlists.find((p) => p.id === dialog?.playlistId);
 
@@ -72,13 +51,12 @@ export default function LibraryListPage({ kind }) {
     }
     if (kind === 'playlists') {
       return (
-        <MediaCard
+        <PlaylistCard
           key={item.id}
-          variant="artist"
-          title={item.name}
-          subtitle={`${item.songIds.length} ${item.songIds.length === 1 ? 'song' : 'songs'}`}
-          onClick={() => setDialog({ playlistId: item.id })}
-          actionLabel={`Edit songs in ${item.name}`}
+          playlist={item}
+          playable={resolve(item.songIds).length > 0}
+          onPlay={() => playPlaylist(item)}
+          onEdit={() => setDialog({ playlistId: item.id })}
         />
       );
     }

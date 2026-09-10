@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { fetchSongs } from '../api';
+import { useCatalog } from '../components/catalog/catalogContext';
 import SectionHeader from '../components/home/SectionHeader';
 import MediaCard from '../components/home/MediaCard';
 import TrendingTable from '../components/home/TrendingTable';
@@ -12,27 +10,10 @@ const ALBUMS = Array.from({ length: 7 }, (_, i) => ({ id: `album-${i}` }));
 const ARTISTS = Array.from({ length: 5 }, (_, i) => ({ id: `artist-${i}` }));
 
 export default function HomePage() {
-  const { query } = useOutletContext();
-  const [songs, setSongs] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchSongs()
-      .then((res) => { if (!cancelled) setSongs(res.data); })
-      // A missing backend must not blank the page — TrendingTable falls
-      // back to the Figma's placeholder rows.
-      .catch(() => { if (!cancelled) setSongs([]); });
-    return () => { cancelled = true; };
-  }, []);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return songs;
-    return songs.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q),
-    );
-  }, [songs, query]);
+  // Trending no longer reacts to the search box. Trending is a property of the
+  // catalogue, not of what you happen to be typing — searching lives in the
+  // combobox and its results page instead.
+  const { songs } = useCatalog();
 
   return (
     <>
@@ -56,7 +37,7 @@ export default function HomePage() {
 
       <section className="section section--trending" aria-labelledby="trending-title">
         <SectionHeader title="Trending Today" id="trending-title" />
-        <TrendingTable songs={filtered} />
+        <TrendingTable songs={songs} />
       </section>
     </>
   );

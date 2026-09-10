@@ -14,7 +14,6 @@ const NAV_ID = 'primary-nav';
  */
 export default function AppShell() {
   const [navOpen, setNavOpen] = useState(false);
-  const [query, setQuery] = useState('');
   const location = useLocation();
 
   // A drawer that survives navigation feels broken, so close it on every move.
@@ -54,15 +53,13 @@ export default function AppShell() {
 
       <div className="app__column">
         <TopBar
-          query={query}
-          onQueryChange={setQuery}
           navOpen={navOpen}
           onToggleNav={() => setNavOpen((v) => !v)}
           navId={NAV_ID}
         />
 
         <main id="main-content" className="app__content">
-          <Outlet context={{ query }} />
+          <Outlet />
         </main>
       </div>
 

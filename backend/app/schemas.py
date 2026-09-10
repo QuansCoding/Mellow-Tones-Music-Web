@@ -75,3 +75,11 @@ class LibraryOut(BaseModel):
     favorite_artist_ids: list[uuid.UUID]
     favorite_artists: list[ArtistOut]
     playlists: list[PlaylistOut]
+
+
+class SearchOut(BaseModel):
+    """Mixed results. `playlists` is empty for anonymous callers rather than
+    withheld — there is nothing private to hide, they simply have none."""
+    songs: list[SongOut]
+    artists: list[ArtistOut]
+    playlists: list[PlaylistOut]
