@@ -11,6 +11,10 @@ class UserCreate(BaseModel):
     email: EmailStr
     # bcrypt silently truncates past 72 bytes; reject rather than mislead.
     password: str = Field(min_length=8, max_length=72)
+    # Cloudflare Turnstile's token from the sign-up form. Optional here
+    # because local development runs without the widget; antibot.py decides
+    # whether it's required.
+    captcha_token: str | None = Field(default=None, max_length=2048)
 
 
 class UserOut(BaseModel):
@@ -20,6 +24,21 @@ class UserOut(BaseModel):
     username: str
     email: EmailStr
     created_at: datetime
+
+
+class VerificationPending(BaseModel):
+    """What sign-up returns instead of a sign-in token.
+
+    The verification token only works on /auth/verify and /auth/resend-code.
+    """
+    verification_token: str
+    email: str
+    email_sent: bool                   # False: the send failed; offer Resend
+    resend_in: int                     # seconds until Resend is allowed
+
+
+class VerifyCode(BaseModel):
+    code: str = Field(pattern=r"^\d{6}$")
 
 
 class ArtistOut(BaseModel):

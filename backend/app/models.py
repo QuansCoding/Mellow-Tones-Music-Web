@@ -36,8 +36,15 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(60), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now)
+    # Null until the owner types the code we emailed them. An unverified
+    # account can't do anything: a sign-in token is only ever issued once
+    # this is set.
+    email_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
 
     songs: Mapped[list["Song"]] = relationship(back_populates="uploader")
+    verification: Mapped["EmailVerification | None"] = relationship(
+        cascade="all, delete-orphan")
 
     # A user's library. Deleting the user takes their library with it.
     liked_songs: Mapped[list["LikedSong"]] = relationship(
@@ -47,6 +54,26 @@ class User(Base):
     playlists: Mapped[list["Playlist"]] = relationship(
         back_populates="user", cascade="all, delete-orphan",
         order_by="Playlist.created_at")
+
+
+class EmailVerification(Base):
+    """The one outstanding sign-up code for an unverified user.
+
+    `user_id` is the key, so a user has at most one code: sending a new one
+    replaces the old. The row is deleted once the email is verified. Only a
+    keyed hash of the code is stored (see verification.py), so a leaked
+    database can't be used to verify anyone.
+    """
+    __tablename__ = "email_verifications"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    code_hash: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # Wrong guesses against this code. Capped, so 6 digits can't be brute-forced.
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    sent_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now)
 
 
 class Artist(Base):
