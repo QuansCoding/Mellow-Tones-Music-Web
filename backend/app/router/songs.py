@@ -1,5 +1,6 @@
 import re
 import uuid
+from datetime import datetime, timedelta, timezone
 from fastapi import (
     APIRouter,
     Depends,
@@ -12,6 +13,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import RedirectResponse, StreamingResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..genres import clean_genre
@@ -89,6 +91,29 @@ def get_or_create_artist(db: Session, name: str) -> Artist:
 MAX_BYTES = 15 * 1024 * 1024          # 15 MB
 ALLOWED = {"audio/mpeg", "audio/mp4", "audio/wav", "audio/x-wav"}
 
+# Per-account limits over a rolling 24 hours, so one account (or a bot that
+# got past sign-up) can't fill the storage bucket.
+UPLOADS_PER_DAY = 10
+BYTES_PER_DAY = 75 * 1024 * 1024      # 75 MB
+
+
+def check_upload_quota(db: Session, user: User, incoming_bytes: int) -> None:
+    since = datetime.now(timezone.utc) - timedelta(days=1)
+    count, used = (
+        db.query(func.count(Song.id), func.coalesce(func.sum(Song.size_bytes), 0))
+        .filter(Song.uploader_id == user.id, Song.created_at >= since)
+        .one()
+    )
+    if count >= UPLOADS_PER_DAY:
+        raise HTTPException(
+            429, f"You've reached the limit of {UPLOADS_PER_DAY} uploads in "
+                 "24 hours. Please try again later.")
+    if used + incoming_bytes > BYTES_PER_DAY:
+        used_mb = used / (1024 * 1024)
+        raise HTTPException(
+            429, f"This upload would take you past 75 MB in 24 hours "
+                 f"({used_mb:.1f} MB used so far). Please try again later.")
+
 @router.post("", response_model=SongOut, status_code=201)
 async def upload_song(
     title: str = Form(...),
@@ -110,6 +135,7 @@ async def upload_song(
     data = await file.read()
     if len(data) > MAX_BYTES:
         raise HTTPException(413, "File too large (max 15 MB)")
+    check_upload_quota(db, user, len(data))
 
     # Validated before the file is written, so a bad genre cannot leave an
     # orphaned upload on disk.

@@ -25,5 +25,10 @@ python-multipart==0.0.32
 # Reads DATABASE_URL / SECRET_KEY from .env
 python-dotenv==1.2.3
 
-# HTTP client for uploading audio to object storage in production.
+# HTTP client for uploading audio to object storage in production, and for
+# the email (Brevo) and human-check (Cloudflare Turnstile) APIs.
 httpx==0.28.1
+
+# Community-maintained list of throwaway email domains (mailinator, …).
+# Updating the list = bumping this version.
+disposable-email-domains==0.0.255

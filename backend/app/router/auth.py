@@ -1,41 +1,89 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
+from ..antibot import check_email, verify_human
 from ..database import get_db
-from ..models import User
-from ..schemas import UserCreate, UserOut
+from ..models import EmailVerification, User
+from ..schemas import UserCreate, UserOut, VerificationPending, VerifyCode
 from ..security import (
-    hash_password, verify_password, create_access_token, get_current_user,
+    hash_password, verify_password, create_access_token,
+    create_verification_token, get_current_user, get_pending_user,
 )
+from ..verification import check_code, ensure_code, seconds_until_resend, send_code
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/register", response_model=UserOut, status_code=201)
+# An account that never verified stops holding its username and email after
+# this long, so nobody can squat a name (or someone else's address) forever.
+UNVERIFIED_HOLD = timedelta(hours=24)
+
+
+def _release_if_abandoned(db: Session, user: User) -> bool:
+    """Delete an old, never-verified account. True if it was deleted."""
+    cutoff = datetime.now(timezone.utc) - UNVERIFIED_HOLD
+    if user.email_verified_at is None and user.created_at < cutoff:
+        db.delete(user)
+        db.flush()
+        return True
+    return False
+
+
+def _pending(db: Session, user: User, sent: bool) -> VerificationPending:
+    return VerificationPending(
+        verification_token=create_verification_token(user.id),
+        email=user.email,
+        email_sent=sent,
+        resend_in=seconds_until_resend(db.get(EmailVerification, user.id)),
+    )
+
+
+@router.post("/register", response_model=VerificationPending, status_code=201)
 def register(user_create: UserCreate, db: Session = Depends(get_db)):
+    # Cheapest check that stops scripts goes first, before any DNS or
+    # database work is spent on them.
+    verify_human(user_create.captcha_token)
+    email = check_email(user_create.email)
+
     # Check if user already exists
     existing = db.query(User).filter(User.username == user_create.username).first()
-    if existing:
+    if existing and not _release_if_abandoned(db, existing):
         raise HTTPException(400, "Username already taken")
 
-    existing_email = db.query(User).filter(User.email == user_create.email).first()
-    if existing_email:
+    # Case-insensitive: "Sam@Gmail.com" and "sam@gmail.com" are one inbox.
+    existing_email = db.query(User).filter(
+        func.lower(User.email) == email.lower()).first()
+    if existing_email and not _release_if_abandoned(db, existing_email):
+        if existing_email.email_verified_at is None:
+            raise HTTPException(
+                400, "This email is already waiting to be verified. Log in "
+                     "to get a new code.")
         raise HTTPException(400, "Email already registered")
 
-    # Create user with hashed password
+    # Create user with hashed password. Unverified until the code comes back.
     user = User(
         username=user_create.username,
-        email=user_create.email,
+        email=email,
         password_hash=hash_password(user_create.password),
     )
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+
+    try:
+        send_code(db, user)
+        sent = True
+    except HTTPException:
+        # The account exists either way; the verify screen offers Resend.
+        sent = False
+    return _pending(db, user, sent)
+
 
 @router.post("/login")
 def login(
     #Takes in same flow sent by OAuth2
-    form_data: OAuth2PasswordRequestForm = Depends(), 
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.username == form_data.username).first()
@@ -46,8 +94,36 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    if user.email_verified_at is None:
+        # Right password, unverified email: no sign-in token. Send them to
+        # the code screen instead, with a live code on its way. Checked only
+        # after the password, so this can't reveal which accounts exist.
+        sent = ensure_code(db, user)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "email_not_verified",
+                "message": "Please verify your email to sign in.",
+                **_pending(db, user, sent).model_dump(),
+            },
+        )
+
     token = create_access_token(user.id)
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/verify")
+def verify_email(body: VerifyCode, db: Session = Depends(get_db),
+                 user: User = Depends(get_pending_user)):
+    """Check the emailed code. On success the user is signed in straight away."""
+    check_code(db, user, body.code)
+    return {"access_token": create_access_token(user.id), "token_type": "bearer"}
+
+
+@router.post("/resend-code", status_code=204)
+def resend_code(db: Session = Depends(get_db),
+                user: User = Depends(get_pending_user)):
+    send_code(db, user)
 
 
 @router.get("/me", response_model=UserOut)
