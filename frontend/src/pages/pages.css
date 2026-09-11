@@ -67,6 +67,37 @@
   max-width: 400px;
 }
 
+.auth-lede {
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+.auth-lede strong {
+  color: var(--color-text-cream);
+  overflow-wrap: anywhere;
+}
+
+.auth-foot {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+/* The widget is a fixed 300×65 iframe; the margin keeps it off the button. */
+.turnstile {
+  min-height: 65px;
+  margin-bottom: var(--sp-4);
+}
+
+.panel .field--code {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Opt-in by class, not by element.
    These began as bare `label` / `input` selectors, which hit every input in
    the app — the search field and all three range scrubbers included, where
@@ -176,8 +207,14 @@
   text-underline-offset: 2px;
 }
 
-.linkish:hover {
+.linkish:hover:not(:disabled) {
   color: var(--color-text-cream);
+}
+
+.linkish:disabled {
+  color: var(--color-text-soft);
+  text-decoration: none;
+  cursor: default;
 }
 
 /* ============================================================
@@ -190,6 +227,15 @@
   font-size: var(--fs-sm);
   color: #ffc8d4;
   background: rgba(255, 100, 140, 0.14);
+  border-radius: var(--radius-sm);
+}
+
+.notice {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-sm);
+  color: var(--color-text-cream);
+  background: var(--color-surface);
   border-radius: var(--radius-sm);
 }
 
