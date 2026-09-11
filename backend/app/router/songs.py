@@ -21,7 +21,9 @@ from ..models import Artist, Song, User, normalize_artist
 from ..plays import song_play_counts, songs_out
 from ..schemas import SongOut, SongUpdate
 from ..security import get_current_user
-from ..storage import UPLOAD_DIR, delete_audio, public_url, save_audio
+from ..storage import (
+    UPLOAD_DIR, StorageError, delete_audio, public_url, save_audio,
+)
 
 
 router = APIRouter(prefix="/songs", tags=["songs"])
@@ -142,7 +144,15 @@ async def upload_song(
     genre_key = clean_genre(genre)
     artist_row = get_or_create_artist(db, artist)
 
-    key = save_audio(data, file.filename)
+    try:
+        key = save_audio(data, file.filename)
+    except StorageError:
+        # A raised HTTPException (unlike an unhandled crash) still gets CORS
+        # headers, so the browser can show this message instead of a bare
+        # "Upload failed". The reason is in the server log.
+        raise HTTPException(
+            502, "We couldn't store your file right now. Please try again "
+                 "in a moment.")
     try:
         song = Song(
             title=title, artist_id=artist_row.id, duration_sec=duration_sec,
