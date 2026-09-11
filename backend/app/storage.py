@@ -8,6 +8,7 @@ Which one is in use depends on env. variables: set SUPABASE_URL and
 SUPABASE_SERVICE_KEY to use the bucket.
 '''
 
+import logging
 import os
 import pathlib
 import uuid
@@ -16,6 +17,7 @@ import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
+log = logging.getLogger(__name__)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
@@ -29,9 +31,20 @@ if not USE_BUCKET:
 CONTENT_TYPES = {".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".wav": "audio/wav"}
 
 
+class StorageError(Exception):
+    """The bucket refused the file or couldn't be reached."""
+
+
 def _headers() -> dict[str, str]:
     # The service key is a server-side secret: it bypasses the bucket's
     # access rules. It must never reach the browser.
+    #
+    # Newer Supabase secret keys ("sb_secret_...") aren't JWTs, so they go on
+    # the apikey header only: sent as "Authorization: Bearer" as well,
+    # Storage tries to read them as a JWT and rejects the request. Legacy
+    # service_role keys are JWTs and still go on both headers.
+    if SUPABASE_KEY.startswith("sb_"):
+        return {"apikey": SUPABASE_KEY}
     return {"Authorization": f"Bearer {SUPABASE_KEY}", "apikey": SUPABASE_KEY}
 
 
@@ -41,14 +54,22 @@ def save_audio(data: bytes, original_name: str) -> str:
     key = f"{uuid.uuid4()}{suffix}"          # NEVER reuse the user's filename
 
     if USE_BUCKET:
-        response = httpx.post(
-            f"{SUPABASE_URL}/storage/v1/object/{BUCKET}/{key}",
-            headers={**_headers(),
-                     "Content-Type": CONTENT_TYPES.get(suffix, "application/octet-stream")},
-            content=data,
-            timeout=60,
-        )
-        response.raise_for_status()           # fail the upload loudly, not silently
+        try:
+            response = httpx.post(
+                f"{SUPABASE_URL}/storage/v1/object/{BUCKET}/{key}",
+                headers={**_headers(),
+                         "Content-Type": CONTENT_TYPES.get(suffix, "application/octet-stream")},
+                content=data,
+                timeout=60,
+            )
+            response.raise_for_status()       # fail the upload loudly, not silently
+        except httpx.HTTPError as exc:
+            # Supabase explains a refusal in the response body (bad key,
+            # missing bucket, file type not allowed...). Log it, so the host's
+            # logs say why rather than only "400 Bad Request".
+            body = exc.response.text[:300] if isinstance(exc, httpx.HTTPStatusError) else ""
+            log.error("Bucket upload failed: %s %s", exc, body)
+            raise StorageError from exc
     else:
         (UPLOAD_DIR / key).write_bytes(data)
     return key
