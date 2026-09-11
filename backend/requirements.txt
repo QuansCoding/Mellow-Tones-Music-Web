@@ -24,3 +24,6 @@ python-multipart==0.0.32
 
 # Reads DATABASE_URL / SECRET_KEY from .env
 python-dotenv==1.2.3
+
+# HTTP client for uploading audio to object storage in production.
+httpx==0.28.1

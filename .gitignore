@@ -1,6 +1,7 @@
 # Secrets
 .env
 frontend/.env
+backend/.env
 
 # Uploaded audio — user data, not source.
 # NB: these were previously written with backslashes ("backend\uploads"), which
@@ -12,6 +13,7 @@ __pycache__/
 *.py[cod]
 venv/
 .venv/
+dist/
 
 # Node
 node_modules/
@@ -19,6 +21,3 @@ frontend/dist/
 
 # Editor / OS
 .DS_Store
-
-# Claude Code tooling config — local convenience, not part of the project.
-.claude/
