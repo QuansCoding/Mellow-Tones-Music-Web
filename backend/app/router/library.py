@@ -36,6 +36,7 @@ def _playlist_out(playlist: Playlist) -> PlaylistOut:
         name=playlist.name,
         created_at=playlist.created_at,
         song_ids=[e.song_id for e in playlist.entries],
+        is_public=playlist.is_public,
     )
 
 
@@ -196,27 +197,36 @@ def create_playlist(
 
 
 @router.patch("/playlists/{playlist_id}", response_model=PlaylistOut)
-def rename_playlist(
+def update_playlist(
     playlist_id: uuid.UUID,
     body: PlaylistUpdate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    """Rename and/or change visibility. Only the fields sent are touched."""
     playlist = _owned_playlist(playlist_id, user, db)
-    name = body.name.strip()
+    changes = body.model_dump(exclude_unset=True)
 
-    clash = db.scalar(
-        select(Playlist).where(
-            Playlist.user_id == user.id,
-            func.lower(Playlist.name) == name.lower(),
-            Playlist.id != playlist.id,
+    if "name" in changes:
+        name = (changes["name"] or "").strip()
+        if not name:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                "Playlist name cannot be blank")
+        clash = db.scalar(
+            select(Playlist).where(
+                Playlist.user_id == user.id,
+                func.lower(Playlist.name) == name.lower(),
+                Playlist.id != playlist.id,
+            )
         )
-    )
-    if clash:
-        raise HTTPException(status.HTTP_409_CONFLICT,
-                            "You already have a playlist with that name")
+        if clash:
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                "You already have a playlist with that name")
+        playlist.name = name
 
-    playlist.name = name
+    if changes.get("is_public") is not None:
+        playlist.is_public = changes["is_public"]
+
     db.commit()
     db.refresh(playlist)
     return _playlist_out(playlist)

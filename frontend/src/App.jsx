@@ -9,6 +9,8 @@ import LoginPage from './pages/LoginPage';
 import UploadPage from './pages/UploadPage';
 import ManagePage from './pages/ManagePage';
 import PlaylistPage from './pages/PlaylistPage';
+import PublicPlaylistPage from './pages/PublicPlaylistPage';
+import ArtistPage from './pages/ArtistPage';
 import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
@@ -24,6 +26,9 @@ export default function App() {
         <Route path="search" element={<SearchPage />} />
         <Route path="discover" element={<StubPage title="Discover" />} />
         <Route path="create" element={<StubPage title="Create" />} />
+        <Route path="artists/:artistId" element={<ArtistPage />} />
+        {/* Read-only; your own playlists live under /library/playlists. */}
+        <Route path="playlists/:playlistId" element={<PublicPlaylistPage />} />
 
         <Route path="library" element={<LibraryPage />} />
         <Route path="library/liked" element={<LibraryListPage kind="liked" />} />

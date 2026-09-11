@@ -47,6 +47,12 @@ export default function LibraryListPage({ kind }) {
           key={item.id}
           variant="album"
           title={item.name}
+          onClick={() =>
+            navigate(`/artists/${item.id}`, {
+              state: { back: { to: '/library/artists', label: 'Favorite Artists' } },
+            })
+          }
+          actionLabel={`Open ${item.name}`}
           actions={<LikeButton artist={item} />}
         />
       );

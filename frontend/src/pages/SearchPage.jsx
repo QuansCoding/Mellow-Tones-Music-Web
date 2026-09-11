@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { searchAll } from '../api';
 import { usePlayer } from '../components/player/playerContext';
 import { usePlayPlaylist } from '../hooks/usePlayPlaylist';
@@ -17,6 +17,7 @@ const EMPTY_RESULTS = { songs: [], artists: [], playlists: [] };
 /** Everything behind the dropdown's "See all results". */
 export default function SearchPage() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const query = params.get('q') ?? '';
   const { playOrToggle, current, isPlaying } = usePlayer();
   const playPlaylist = usePlayPlaylist();
@@ -121,6 +122,12 @@ export default function SearchPage() {
                 key={a.id}
                 variant="album"
                 title={a.name}
+                onClick={() =>
+                  navigate(`/artists/${a.id}`, {
+                    state: { back: { to: `/search?q=${encodeURIComponent(query)}`, label: 'Search' } },
+                  })
+                }
+                actionLabel={`Open ${a.name}`}
                 actions={<LikeButton artist={a} />}
               />
             ))}

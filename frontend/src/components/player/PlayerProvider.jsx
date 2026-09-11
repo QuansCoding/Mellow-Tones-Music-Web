@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getSongStreamUrl } from '../../api';
+import { getSongStreamUrl, recordPlay } from '../../api';
 import { PlayerContext } from './playerContext';
+
+// Seconds of audio actually heard before a listen counts as a play — the
+// usual industry line between "listened" and "skipped past".
+const PLAY_THRESHOLD_SEC = 30;
 
 /**
  * Owns the single <audio> element and all transport state.
@@ -10,6 +14,14 @@ import { PlayerContext } from './playerContext';
  */
 export default function PlayerProvider({ children }) {
   const audioRef = useRef(null);
+  // Where the queue came from ({ playlistId }), so a play can be credited to
+  // the playlist it was heard in — that is what ranks playlists on Home.
+  const contextRef = useRef(null);
+  // Listening progress for the loaded track. Refs, not state: it changes
+  // four times a second and nothing renders from it.
+  const listenRef = useRef({
+    songId: null, playlistId: null, listened: 0, last: 0, counted: false,
+  });
 
   const [queue, setQueue] = useState([]);
   const [index, setIndex] = useState(-1);
@@ -28,6 +40,13 @@ export default function PlayerProvider({ children }) {
 
     audio.src = getSongStreamUrl(current.id);
     audio.load();
+    listenRef.current = {
+      songId: current.id,
+      playlistId: contextRef.current?.playlistId ?? null,
+      listened: 0,
+      last: 0,
+      counted: false,
+    };
     setCurrentTime(0);
     setDuration(current.duration_sec ?? 0);
 
@@ -47,16 +66,47 @@ export default function PlayerProvider({ children }) {
     // A seek is asynchronous: between setting currentTime and the `seeked`
     // event, `timeupdate` still reports the OLD position. Letting that through
     // yanks the slider back to where the user just dragged from.
+    // A play counts after 30s of audio actually heard — not 30s after
+    // pressing play, and not a drag of the scrubber to 0:30. Only the small
+    // forward steps between timeupdates (~4 a second) are added up, so seeks
+    // and rewinds contribute nothing and pausing simply stops the clock.
+    const countListening = () => {
+      const listen = listenRef.current;
+      const t = audio.currentTime;
+      const step = t - listen.last;
+      listen.last = t;
+      if (step > 0 && step < 1.5) listen.listened += step;
+
+      // A song shorter than the threshold counts once nearly all of it is heard.
+      const need = Number.isFinite(audio.duration)
+        ? Math.min(PLAY_THRESHOLD_SEC, audio.duration * 0.9)
+        : PLAY_THRESHOLD_SEC;
+      if (!listen.counted && listen.songId && listen.listened >= need) {
+        listen.counted = true;
+        // Fire and forget: a lost play count must never interrupt playback.
+        recordPlay(listen.songId, listen.playlistId).catch(() => {});
+      }
+    };
+
     const onTime = () => {
       if (!audio.seeking) setCurrentTime(audio.currentTime);
+      countListening();
     };
-    const onSeeked = () => setCurrentTime(audio.currentTime);
+    const onSeeked = () => {
+      setCurrentTime(audio.currentTime);
+      listenRef.current.last = audio.currentTime;
+    };
     const onMeta = () => {
       if (Number.isFinite(audio.duration)) setDuration(audio.duration);
     };
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
-    const onEnded = () => setIndex((i) => (i + 1 < queue.length ? i + 1 : i));
+    const onEnded = () => {
+      // Hearing it through again may count again (the server's cooldown
+      // decides) — without this, replaying the last track never could.
+      Object.assign(listenRef.current, { listened: 0, last: 0, counted: false });
+      setIndex((i) => (i + 1 < queue.length ? i + 1 : i));
+    };
 
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('seeked', onSeeked);
@@ -78,7 +128,8 @@ export default function PlayerProvider({ children }) {
   }, [queue.length]);
 
   /* --- Actions -------------------------------------------------------- */
-  const playSong = useCallback((song, list) => {
+  const playSong = useCallback((song, list, context = null) => {
+    contextRef.current = context;
     const nextQueue = list?.length ? list : [song];
     const at = nextQueue.findIndex((s) => s.id === song.id);
     setQueue(nextQueue);
@@ -102,9 +153,9 @@ export default function PlayerProvider({ children }) {
    * the transport, once.
    */
   const playOrToggle = useCallback(
-    (song, list) => {
+    (song, list, context) => {
       if (song && current?.id === song.id) toggle();
-      else if (song) playSong(song, list);
+      else if (song) playSong(song, list, context);
     },
     [current, toggle, playSong],
   );

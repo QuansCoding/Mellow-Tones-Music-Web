@@ -17,11 +17,13 @@ import { Play, Pause } from '../icons/Icons';
  * card's :focus-within reveals it, so it is reachable by keyboard, and it
  * stays visible while this playlist is the one playing.
  */
-export default function PlaylistCard({ playlist, playable, playing, onPlay, onOpen }) {
+export default function PlaylistCard({
+  playlist, playable, playing, onPlay, onOpen, variant = 'artist', subtitle,
+}) {
   const count = playlist.songIds.length;
 
   return (
-    <li className={`card card--artist card--playlist${playing ? ' card--active' : ''}`}>
+    <li className={`card card--${variant} card--playlist${playing ? ' card--active' : ''}`}>
       <button
         type="button"
         className="card__button"
@@ -32,7 +34,7 @@ export default function PlaylistCard({ playlist, playable, playing, onPlay, onOp
         <div className="card__info">
           <p className="card__title">{playlist.name}</p>
           <p className="card__subtitle">
-            {count} {count === 1 ? 'song' : 'songs'}
+            {subtitle ?? `${count} ${count === 1 ? 'song' : 'songs'}`}
           </p>
         </div>
       </button>

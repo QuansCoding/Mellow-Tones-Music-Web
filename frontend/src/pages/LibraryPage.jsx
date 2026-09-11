@@ -20,7 +20,7 @@ import '../components/library/library.css';
 export default function LibraryPage() {
   const navigate = useNavigate();
   const { isLoggedIn, ready } = useAuth();
-  const { byId } = useCatalog();
+  const { byId, error: catalogError } = useCatalog();
   const { playOrToggle, current, isPlaying } = usePlayer();
   const playPlaylist = usePlayPlaylist();
   const playbackOf = usePlaylistPlayback();
@@ -72,8 +72,12 @@ export default function LibraryPage() {
   if (!ready) return null;
   if (!isLoggedIn) return <SignInPrompt />;
 
-  const banner = lib.error ? (
-    <div className="error" role="alert">{lib.error}</div>
+  // Liked songs resolve through the catalogue, so without it they would
+  // simply be missing — say why instead.
+  const message =
+    lib.error || (catalogError ? 'Couldn’t load songs from the server — retrying…' : '');
+  const banner = message ? (
+    <div className="error" role="alert">{message}</div>
   ) : null;
 
   // One return, with the body switched inside it. Two sibling returns put
@@ -167,6 +171,12 @@ export default function LibraryPage() {
               key={a.id}
               variant="album"
               title={a.name}
+              onClick={() =>
+                navigate(`/artists/${a.id}`, {
+                  state: { back: { to: '/library', label: 'Library' } },
+                })
+              }
+              actionLabel={`Open ${a.name}`}
               actions={<LikeButton artist={a} />}
             />
           ))}

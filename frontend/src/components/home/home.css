@@ -35,6 +35,21 @@
   background: var(--color-row-hover);
 }
 
+/* The ranking window ("Today" / "All time"). Quiet, so the section title
+   still reads first. */
+.section__tag {
+  display: inline-block;
+  margin-left: var(--sp-2);
+  padding: 2px var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  color: var(--color-text-cream);
+  background: var(--color-row-hover);
+  border-radius: var(--radius-pill);
+}
+
 /* ============================================================
    Album + artist grids
    Card counts match the Figma (7 and 5); the tiles themselves are
@@ -69,6 +84,38 @@
 
 .card--album  { aspect-ratio: 137 / 125; }
 .card--artist { aspect-ratio: 200 / 125; }
+
+/* Loading placeholders: the real tiles' shape, so nothing reflows when the
+   data lands. */
+.card--skeleton,
+.trow--skeleton {
+  animation: skeleton-pulse 1.4s var(--ease) infinite;
+}
+
+.card--skeleton:hover {
+  transform: none;
+}
+
+.trow--skeleton {
+  margin-bottom: var(--sp-1);
+  background: var(--color-surface);
+  opacity: 0.35;
+}
+
+.trow--skeleton:not(.trow--head):hover {
+  background: var(--color-surface);
+}
+
+@keyframes skeleton-pulse {
+  50% { opacity: 0.2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card--skeleton,
+  .trow--skeleton {
+    animation: none;
+  }
+}
 
 .card__art {
   position: absolute;

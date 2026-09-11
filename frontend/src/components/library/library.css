@@ -601,8 +601,106 @@
 .plhead__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--sp-2);
   margin-top: var(--sp-4);
+}
+
+/* "Artist" / "Public playlist" above the title: says what kind of page this
+   is, since artist and playlist pages otherwise share one layout. */
+.plhead__eyebrow {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+/* Favourite heart beside Play all — same height as the buttons. */
+.plhead__fav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--color-text-soft);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  transition: color var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease);
+}
+
+.plhead__fav:hover {
+  color: var(--color-text-cream);
+  background: var(--color-row-hover);
+}
+
+.plhead__fav.likebtn--on {
+  color: var(--color-accent);
+}
+
+/* --- Visibility switch ------------------------------------------------- */
+
+.plhead__share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  margin-top: var(--sp-4);
+}
+
+.plvis {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 32px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.plvis__track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.plvis__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--color-text-soft);
+  border-radius: 50%;
+  transition: transform var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease);
+}
+
+.plvis[aria-checked='true'] .plvis__track {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.plvis[aria-checked='true'] .plvis__knob {
+  background: var(--color-text-cream);
+  transform: translateX(16px);
+}
+
+.plvis:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.plhead__note {
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
 }
 
 /* Rows, not tiles: a playlist is ordered, and titles are what you scan.
@@ -710,6 +808,60 @@
   font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-soft);
+}
+
+/* Fixed width so the duration column lines up whatever the count's length. */
+.plrow__plays {
+  width: 4.5em;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-soft);
+}
+
+/* Add + like on read-only rows. Targeted by class, never `> *`: the add
+   button emits its closed <dialog> as a sibling, and styling that as a flex
+   item un-hides it (the bug that once blocked the liked-song hearts). */
+.plrow__acts {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  margin-right: var(--sp-2);
+}
+
+.plrow__act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--color-text-soft);
+  border-radius: var(--radius-pill);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease);
+}
+
+.plrow:hover .plrow__act,
+.plrow:focus-within .plrow__act,
+.plrow__act.likebtn--on {
+  opacity: 1;
+}
+
+.plrow__act.likebtn--on {
+  color: var(--color-accent);
+}
+
+.plrow__act:hover {
+  background: var(--color-surface);
+  color: var(--color-text-cream);
+}
+
+@media (hover: none) {
+  .plrow__act {
+    opacity: 1;
+  }
 }
 
 .plrow__remove {

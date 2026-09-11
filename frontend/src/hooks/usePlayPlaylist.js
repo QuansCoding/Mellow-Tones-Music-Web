@@ -30,7 +30,8 @@ export function usePlayPlaylist() {
         toggle();
         return true;
       }
-      playSong(list[0], list);
+      // The context credits each play to this playlist, which ranks it on Home.
+      playSong(list[0], list, { playlistId: playlist.id });
       return true;
     },
     [playSong, toggle, current, resolve],

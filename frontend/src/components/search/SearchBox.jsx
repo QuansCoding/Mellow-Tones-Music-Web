@@ -112,10 +112,9 @@ export default function SearchBox() {
         // going through the rest of what you searched for.
         playSong(entry.item, results.songs);
       } else if (entry.type === 'artists') {
-        // Artists have no page of their own yet; the honest destination is
-        // the full results for that artist's name.
-        navigate(`/search?q=${encodeURIComponent(entry.item.name)}`);
-        setQuery(entry.item.name);
+        // Their own page, rather than a name search that also matched
+        // unrelated songs and artists.
+        navigate(`/artists/${entry.item.id}`);
       } else if (entry.type === 'playlists') {
         // restart: picking a result is a choice to play it, not a pause.
         if (!playPlaylist(entry.item, { restart: true })) navigate('/library');

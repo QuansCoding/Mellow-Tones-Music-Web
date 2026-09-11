@@ -79,7 +79,12 @@ def search(
 
     artists = db.scalars(
         select(Artist)
-        .where(Artist.name.ilike(like, escape="\\"))
+        .where(
+            Artist.name.ilike(like, escape="\\"),
+            # An artist whose last song was deleted or re-attributed has
+            # nothing to open or play, so it is not offered.
+            select(Song.id).where(Song.artist_id == Artist.id).exists(),
+        )
         .order_by(
             case((Artist.name.ilike(prefix, escape="\\"), 0), else_=1),
             func.lower(Artist.name),
@@ -111,6 +116,7 @@ def search(
                 name=p.name,
                 created_at=p.created_at,
                 song_ids=[e.song_id for e in p.entries],
+                is_public=p.is_public,
             )
             for p in rows
         ]
