@@ -1,0 +1,43 @@
+/* ============================================================
+   Discover
+   ============================================================ */
+
+/* One clear primary action above the fold: the page's job is to get
+   something new playing, and browsing is secondary. */
+.discover__hero {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-7);
+  padding: var(--sp-6);
+  background: linear-gradient(135deg, var(--color-surface), var(--color-sidebar-bg));
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+}
+
+.discover__title {
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  color: var(--color-text-cream);
+}
+
+.discover__blurb {
+  max-width: 52ch;
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+.discover__play {
+  margin-top: var(--sp-3);
+}
+
+/* Each section says why its songs are there, tucked under the title. */
+.discover__note {
+  margin: calc(var(--sp-3) * -1) 0 var(--sp-4);
+}
+
+@media (max-width: 520px) {
+  .discover__hero {
+    padding: var(--sp-5);
+  }
+}

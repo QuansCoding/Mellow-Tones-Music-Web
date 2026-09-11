@@ -46,6 +46,10 @@
   --fs-md: 14px;
   --fs-lg: 16px;
   --fs-xl: 17px;
+  /* Page titles (playlist, artist, Discover) — a clear step above the 16/17px
+     section headings. Was referenced before it existed, so those titles
+     silently fell back to the 14px body size. */
+  --fs-2xl: 24px;
 
   --lh-tight: 1.2;
   --lh-body: 1.5;

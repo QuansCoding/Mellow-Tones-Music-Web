@@ -7,7 +7,11 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,           # Allows SQLAlchemy to reconnect to Neon
+    pool_pre_ping=True,     # tests each pooled connection before using
+    pool_recycle=300,       # replaces connections older than 5 minutes
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

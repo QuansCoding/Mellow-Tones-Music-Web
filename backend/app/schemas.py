@@ -41,6 +41,7 @@ class SongOut(BaseModel):
     duration_sec: int
     uploader_id: uuid.UUID
     created_at: datetime
+    genre: str | None = None
     # Filled only where it was actually computed (catalogue, home, artist
     # page). None means "not counted in this response", which the client
     # shows as a dash rather than a misleading 0.
@@ -53,6 +54,8 @@ class SongOut(BaseModel):
 class SongUpdate(BaseModel):
     title: str | None = None
     artist: str | None = None
+    # A genre key, or null / "" to clear it.
+    genre: str | None = None
 
 
 # --------------------------------------------------------------------------
@@ -103,9 +106,6 @@ class PlayCreate(BaseModel):
     # Set when the song was played as part of a playlist; that is what ranks
     # playlists. Dropped server-side unless it is visible and holds the song.
     playlist_id: uuid.UUID | None = None
-    # Signed-out listeners send a random id their browser keeps, so the
-    # replay cooldown applies to them too. Ignored when signed in.
-    listener_id: uuid.UUID | None = None
 
 
 class PlayResult(BaseModel):
@@ -141,6 +141,25 @@ class HomeOut(BaseModel):
     artists_window: Window
     playlists: list[PublicPlaylistOut]
     playlists_window: Window
+
+
+class GenreOut(BaseModel):
+    id: str
+    label: str
+
+
+class DiscoverOut(BaseModel):
+    """Discover's sections. Each song appears in at most one of them, and a
+    signed-in listener's liked songs appear in none."""
+    signed_in: bool
+    # True when a signed-in listener has heard every song not liked, so
+    # `for_you` holds what they have played least instead of unheard songs.
+    all_heard: bool
+    genre: str | None = None
+    for_you: list[SongOut]
+    fresh: list[SongOut]
+    under_radar: list[SongOut]
+    artists: list[ArtistStatOut]
 
 
 class SearchOut(BaseModel):

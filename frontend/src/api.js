@@ -42,12 +42,13 @@ export const fetchMySongs = () => API.get('/songs/mine');
 export const updateSong  = (id, changes) => API.patch(`/songs/${id}`, changes);
 export const deleteSong  = (id) => API.delete(`/songs/${id}`);
 
-export const uploadSong = (title, artist, duration_sec, file) => {
+export const uploadSong = (title, artist, duration_sec, file, genre = '') => {
   const formData = new FormData();
   formData.append('title', title);
   formData.append('artist', artist);
   formData.append('duration_sec', duration_sec);
   formData.append('file', file);
+  if (genre) formData.append('genre', genre);
   return API.post('/songs', formData);
 };
 
@@ -91,40 +92,30 @@ export const setPlaylistPublic = (id, isPublic) =>
   API.patch(`/me/playlists/${id}`, { is_public: isPublic });
 
 // ---------------------------------------------------------------------------
-// Plays + discovery — all public, no sign-in needed.
+// Plays + discovery — reads are public; recording a play needs an account.
 // ---------------------------------------------------------------------------
 
 /**
- * A random id this browser keeps, so the server's replay cooldown can tell
- * one signed-out listener from another. It identifies a browser, not a
- * person, and is ignored once signed in.
+ * Called by the player after 30s of real listening. Only signed-in listens
+ * count, so a signed-out visitor never sends one — the server would refuse
+ * it (401) anyway.
  */
-function listenerId() {
-  try {
-    let id = localStorage.getItem('listenerId');
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem('listenerId', id);
-    }
-    return id;
-  } catch {
-    return undefined;
-  }
-}
-
-/** Called by the player after 30s of real listening. */
 export const recordPlay = (songId, playlistId = null) =>
-  API.post('/plays', {
-    song_id: songId,
-    playlist_id: playlistId,
-    listener_id: listenerId(),
-  });
+  localStorage.getItem('token')
+    ? API.post('/plays', { song_id: songId, playlist_id: playlistId })
+    : Promise.resolve(null);
 
 /** Everything the front page shows, in one round trip. */
 export const fetchHome = () => API.get('/home');
 export const fetchArtist = (id) => API.get(`/artists/${id}`);
 /** A public playlist (or your own). 404 for anyone else's private one. */
 export const fetchPublicPlaylist = (id) => API.get(`/playlists/${id}`);
+
+/** Discover's sections, personal when signed in. `genre` is for the filter
+ *  row still to come — the server already honours it. */
+export const fetchDiscover = (genre) =>
+  API.get('/discover', { params: genre ? { genre } : {} });
+export const fetchGenres = () => API.get('/genres');
 
 // ---------------------------------------------------------------------------
 // Search

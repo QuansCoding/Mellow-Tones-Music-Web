@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .router import songs, auth, library, search, discover
@@ -11,13 +12,27 @@ from .router import songs, auth, library, search, discover
 
 app = FastAPI(title="Quan's Music API")
 
+# Comma-separated list (ex. "https://mellowtones.vercel.app,http://localhost:5173").
+# Defaults to the Vite dev server (http, not https), so local dev needs no setup.
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],   # the Vite dev server
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/health")
+def health():
+    """Cheap endpoint for host's health check"""
+    return {"status":"ok"}
 
 app.include_router(songs.router)
 app.include_router(auth.router)

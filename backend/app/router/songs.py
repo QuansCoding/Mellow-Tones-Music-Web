@@ -11,14 +11,15 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import StreamingResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from ..database import get_db
+from ..genres import clean_genre
 from ..models import Artist, Song, User, normalize_artist
 from ..plays import song_play_counts, songs_out
 from ..schemas import SongOut, SongUpdate
 from ..security import get_current_user
-from ..storage import UPLOAD_DIR, save_audio
+from ..storage import UPLOAD_DIR, delete_audio, public_url, save_audio
 
 
 router = APIRouter(prefix="/songs", tags=["songs"])
@@ -94,6 +95,7 @@ async def upload_song(
     artist: str = Form(...),
     duration_sec: int = Form(...),
     file: UploadFile = File(...),
+    genre: str | None = Form(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -109,16 +111,27 @@ async def upload_song(
     if len(data) > MAX_BYTES:
         raise HTTPException(413, "File too large (max 15 MB)")
 
+    # Validated before the file is written, so a bad genre cannot leave an
+    # orphaned upload on disk.
+    genre_key = clean_genre(genre)
     artist_row = get_or_create_artist(db, artist)
 
     key = save_audio(data, file.filename)
-    song = Song(
-        title=title, artist_id=artist_row.id, duration_sec=duration_sec,
-        storage_key=key, size_bytes=len(data), uploader_id=user.id,
-    )
-    db.add(song)
-    db.commit()
-    db.refresh(song)    
+    try:
+        song = Song(
+            title=title, artist_id=artist_row.id, duration_sec=duration_sec,
+            storage_key=key, size_bytes=len(data), uploader_id=user.id,
+            genre=genre_key,
+        )
+        db.add(song)
+        db.commit()
+    except Exception:
+        # The file is stored but the row isn't, so nothing would ever point
+        # at it. Remove it before letting the error through.
+        db.rollback()
+        delete_audio(key)
+        raise
+    db.refresh(song)
     
     return song
 
@@ -132,7 +145,14 @@ def stream_song(song_id: uuid.UUID, request: Request,
     if song is None:
         raise HTTPException(404, "Song not found")
 
+    url = public_url(song.storage_key)
+    if url is not None:
+        # The bucket serves the file itself, including HTTP Range requests,
+        # so seeking still works and the API never proxies audio bytes.
+        return RedirectResponse(url, status_code=307)
+
     path = UPLOAD_DIR / song.storage_key
+
     file_size = path.stat().st_size
     range_header = request.headers.get("range")
 
@@ -147,6 +167,7 @@ def stream_song(song_id: uuid.UUID, request: Request,
     # TODO 4: return Response(..., status_code=206, headers={
     #     "Content-Range": f"bytes {start}-{end}/{file_size}",
     #     "Accept-Ranges": "bytes"})
+    
     if range_header is None:
         return StreamingResponse(
             open(path, "rb"),
@@ -201,6 +222,8 @@ def update_song(song_id: uuid.UUID, changes: SongUpdate,
         song.title = title
     if "artist" in data:
         song.artist_id = get_or_create_artist(db, data["artist"] or "").id
+    if "genre" in data:
+        song.genre = clean_genre(data["genre"])
 
     db.commit()
     db.refresh(song)
@@ -215,14 +238,18 @@ def delete_song(song_id: uuid.UUID, db: Session = Depends(get_db),
     # TODO 1: fetch the song; 404 if missing
     # TODO 2: if song.uploader_id != user.id → 403, NOT 404
     #   Logged in is not the same as allowed. This is the 401/403 split.
-    # TODO 3: delete the file from disk, then db.delete(song); db.commit()
+    # TODO 3: db.delete(song); db.commit(); then delete the file (row first)
     song = db.get(Song, song_id)
     if song is None:
         raise HTTPException(404, "Song not found")
     if song.uploader_id != user.id:
         raise HTTPException(403, "You can only delete your own songs")
-    
-    (UPLOAD_DIR / song.storage_key).unlink(missing_ok=True)
+
+    key = song.storage_key          # read now: the row is gone after commit
     db.delete(song)
     db.commit()
+    # Row first, file second. If the commit fails, the song is untouched and
+    # still plays; if removing the file fails, the worst case is an unused
+    # file in storage — never a song whose audio is missing.
+    delete_audio(key)
     

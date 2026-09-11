@@ -1,24 +1,31 @@
 """Play counting and the public, read-only views built on it.
 
-Everything here is open to anonymous callers: the home page, artist pages and
-public playlists are browsable signed out, just like the catalogue. Private
-playlists are only ever returned to their owner.
+Every read here is open to anonymous callers: the home page, Discover, artist
+pages and public playlists are browsable signed out, just like the catalogue.
+Private playlists are only ever returned to their owner.
+
+Recording a play is the exception — it needs an account. Signed-out visitors
+can listen, but their listening does not move any chart.
 """
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Artist, PlayEvent, Playlist, PlaylistSong, Song, User
+from ..genres import GENRES, clean_genre
+from ..models import (
+    Artist, FavoriteArtist, LikedSong, PlayEvent, Playlist, PlaylistSong, Song,
+    User,
+)
 from ..plays import song_play_counts, songs_out
 from ..schemas import (
-    ArtistDetailOut, ArtistStatOut, HomeOut, PlayCreate, PlayResult,
-    PublicPlaylistOut,
+    ArtistDetailOut, ArtistStatOut, DiscoverOut, GenreOut, HomeOut,
+    PlayCreate, PlayResult, PublicPlaylistOut,
 )
-from ..security import get_current_user_optional
+from ..security import get_current_user, get_current_user_optional
 
 router = APIRouter(tags=["discover"])
 
@@ -149,9 +156,10 @@ def _playlists_out(db: Session, playlists: list[Playlist],
 def record_play(
     body: PlayCreate,
     db: Session = Depends(get_db),
-    user: User | None = Depends(get_current_user_optional),
+    user: User = Depends(get_current_user),
 ):
-    """Count one listen. The client calls this after 30s of actual playback.
+    """Count one signed-in listen. The client calls this after 30s of actual
+    playback, and never while signed out (this would 401).
 
     Returns whether it counted: a replay inside the cooldown is accepted
     (the client did nothing wrong) but not recorded.
@@ -160,14 +168,7 @@ def record_play(
     if song is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Song not found")
 
-    if user is not None:
-        listener_key = f"u:{user.id}"
-    elif body.listener_id is not None:
-        listener_key = f"a:{body.listener_id}"
-    else:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
-                            "listener_id is required when signed out")
-
+    listener_key = f"u:{user.id}"
     now = _now()
     recent = db.scalar(
         select(PlayEvent.id).where(
@@ -316,3 +317,121 @@ def get_playlist(
     ):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Playlist not found")
     return _playlists_out(db, [playlist])[0]
+
+
+# --------------------------------------------------------------------------
+# Genres + Discover
+# --------------------------------------------------------------------------
+
+DISCOVER_SONGS = 12      # per section
+DISCOVER_ARTISTS = 8
+
+
+@router.get("/genres", response_model=list[GenreOut])
+def list_genres():
+    """The fixed genre list, in display order. Served rather than copied into
+    the client, so the upload form, the edit form and the Discover filter can
+    never drift from what the server accepts."""
+    return [GenreOut(id=key, label=label) for key, label in GENRES.items()]
+
+
+@router.get("/discover", response_model=DiscoverOut)
+def discover(
+    genre: str | None = Query(None, max_length=40),
+    db: Session = Depends(get_db),
+    user: User | None = Depends(get_current_user_optional),
+):
+    """Music the listener has not settled on yet.
+
+    Home is what everyone is playing; Discover is what *you* have not heard.
+    The rules:
+
+      - a signed-in listener's liked songs never appear — they already have
+        a home in the library;
+      - "for you" is songs they have never played, artists they favour first
+        (the nearest thing to taste until genres fill in), then newest. Once
+        everything has been heard it becomes what they have played least,
+        and `all_heard` tells the page to say so;
+      - each song appears in one section only, the first that wants it, so a
+        small catalogue does not repeat the same three tracks down the page.
+
+    `genre` already narrows every section, so the filter row can be added to
+    the page later without changing this endpoint.
+
+    Ranking happens in Python over the (optionally genre-filtered) catalogue.
+    That is fine into the low thousands of songs; beyond that, move the
+    ordering into SQL.
+    """
+    genre = clean_genre(genre)
+    query = select(Song)
+    if genre is not None:
+        query = query.where(Song.genre == genre)
+    songs = db.scalars(query).all()
+    counts = song_play_counts(db, [s.id for s in songs])
+
+    liked: set[uuid.UUID] = set()
+    heard: dict[uuid.UUID, int] = {}
+    favourites: set[uuid.UUID] = set()
+    if user is not None:
+        liked = set(db.scalars(
+            select(LikedSong.song_id).where(LikedSong.user_id == user.id)
+        ).all())
+        heard = dict(db.execute(
+            select(PlayEvent.song_id, func.count(PlayEvent.id))
+            .where(PlayEvent.user_id == user.id)
+            .group_by(PlayEvent.song_id)
+        ).all())
+        favourites = set(db.scalars(
+            select(FavoriteArtist.artist_id).where(FavoriteArtist.user_id == user.id)
+        ).all())
+
+    pool = [s for s in songs if s.id not in liked]
+    taken: set[uuid.UUID] = set()
+
+    def take(ordered):
+        picked = []
+        for song in ordered:
+            if song.id in taken:
+                continue
+            taken.add(song.id)
+            picked.append(song)
+            if len(picked) == DISCOVER_SONGS:
+                break
+        return picked
+
+    def newest(song):
+        return -song.created_at.timestamp()
+
+    for_you, all_heard = [], False
+    if user is not None:
+        unheard = [s for s in pool if s.id not in heard]
+        if unheard:
+            for_you = take(sorted(
+                unheard, key=lambda s: (s.artist_id not in favourites, newest(s))))
+        elif pool:
+            all_heard = True
+            for_you = take(sorted(pool, key=lambda s: (heard.get(s.id, 0), newest(s))))
+
+    fresh = take(sorted(pool, key=newest))
+    under_radar = take(sorted(pool, key=lambda s: (counts.get(s.id, 0), newest(s))))
+
+    # Artists to try: not already favourited, ones you have never played
+    # first. Only artists with a song in scope, so every tile has something
+    # to open.
+    heard_artists = {s.artist_id for s in songs if s.id in heard}
+    candidate_ids = list(dict.fromkeys(
+        s.artist_id for s in songs if s.artist_id not in favourites))
+    artists = sorted(
+        _in_order(db, Artist, candidate_ids),
+        key=lambda a: (a.id in heard_artists, a.name.lower()),
+    )[:DISCOVER_ARTISTS]
+
+    return DiscoverOut(
+        signed_in=user is not None,
+        all_heard=all_heard,
+        genre=genre,
+        for_you=songs_out(for_you, counts),
+        fresh=songs_out(fresh, counts),
+        under_radar=songs_out(under_radar, counts),
+        artists=_artists_out(db, artists),
+    )
