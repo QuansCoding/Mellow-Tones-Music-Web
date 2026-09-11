@@ -7,7 +7,11 @@ const API = axios.create({
 // Attach the token to every request automatically.
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // A request that already carries a token (the email-verification calls)
+  // keeps it.
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -15,11 +19,13 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isLoginAttempt = error.config?.url?.includes('/auth/login');
-    // A 401 from /auth/login is just wrong credentials, not an expired
-    // session — clearing the token there would sign out a valid session
-    // because someone mistyped a password.
-    if (error.response?.status === 401 && !isLoginAttempt) {
+    const isSignInFlow = /\/auth\/(login|verify|resend-code)/.test(
+      error.config?.url ?? '',
+    );
+    // A 401 during sign-in is wrong credentials or an expired verification
+    // step, not an expired session — clearing the token there would sign out
+    // a valid session because someone mistyped a password.
+    if (error.response?.status === 401 && !isSignInFlow) {
       localStorage.removeItem('token');
       // AuthProvider listens for this and clears the user + library in place,
       // rather than reloading the page out from under whatever they were doing.
@@ -29,12 +35,41 @@ API.interceptors.response.use(
   }
 );
 
-export const register = (username, email, password) =>
-  API.post('/auth/register', { username, email, password });
+/** A readable message from a failed request.
+ *  FastAPI sends `detail` as a string for errors the API raises, but as a
+ *  list of objects for validation (422) errors — and rendering that list
+ *  directly would crash React. */
+export function errorMessage(err, fallback = 'Something went wrong') {
+  const detail = err?.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail) && detail[0]?.msg) {
+    const field = detail[0].loc?.at(-1);
+    const msg = detail[0].msg.replace(/^Value error, /, '');
+    return typeof field === 'string' ? `${field}: ${msg}` : msg;
+  }
+  if (typeof detail?.message === 'string') return detail.message;
+  return fallback;
+}
+
+/** Creates an unverified account and emails a code. Returns a
+ *  `verification_token` rather than a sign-in token. */
+export const register = (username, email, password, captchaToken = null) =>
+  API.post('/auth/register', {
+    username, email, password, captcha_token: captchaToken,
+  });
 
 // Login is form-encoded — this must match OAuth2PasswordRequestForm.
+// An unverified account gets a 403 whose detail has code 'email_not_verified'.
 export const login = (username, password) =>
   API.post('/auth/login', new URLSearchParams({ username, password }));
+
+const bearer = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
+
+/** Returns a normal sign-in `access_token` when the code is right. */
+export const verifyEmail = (verificationToken, code) =>
+  API.post('/auth/verify', { code }, bearer(verificationToken));
+export const resendCode = (verificationToken) =>
+  API.post('/auth/resend-code', null, bearer(verificationToken));
 
 export const fetchSongs  = () => API.get('/songs');
 // The Manage page reads this: only the songs the signed-in user uploaded.
