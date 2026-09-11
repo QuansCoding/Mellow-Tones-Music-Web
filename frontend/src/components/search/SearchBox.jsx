@@ -305,15 +305,8 @@ export default function SearchBox() {
                           onMouseDown={(e) => e.preventDefault()}
                           onMouseEnter={() => setActive(i)}
                         >
-                          <button
-                            type="button"
-                            tabIndex={-1}
-                            aria-hidden="true"
-                            className={`search__act${liked ? ' search__act--on' : ''}`}
-                            onClick={() => likeEntry(entry)}
-                          >
-                            <Heart size={14} filled={liked} />
-                          </button>
+                          {/* Heart last, so it sits on the right edge for
+                              songs and artists alike. */}
                           {group.key === 'songs' && (
                             <button
                               type="button"
@@ -325,6 +318,15 @@ export default function SearchBox() {
                               <Plus size={14} />
                             </button>
                           )}
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            aria-hidden="true"
+                            className={`search__act${liked ? ' search__act--on' : ''}`}
+                            onClick={() => likeEntry(entry)}
+                          >
+                            <Heart size={14} filled={liked} />
+                          </button>
                         </div>
                       )}
                     </li>

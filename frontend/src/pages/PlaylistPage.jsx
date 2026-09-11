@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../components/auth/authContext';
 import { useCatalog } from '../components/catalog/catalogContext';
 import { useLibrary } from '../components/library/libraryContext';
@@ -8,7 +8,7 @@ import { usePlayPlaylist, usePlaylistPlayback } from '../hooks/usePlayPlaylist';
 import SignInPrompt from '../components/library/SignInPrompt';
 import SearchAddList from '../components/library/SearchAddList';
 import Artwork from '../components/common/Artwork';
-import { Close, Play, Pause } from '../components/icons/Icons';
+import { ChevronLeft, Close, Play, Pause } from '../components/icons/Icons';
 import { formatTime } from '../utils/format';
 import '../components/home/home.css';
 import '../components/library/library.css';
@@ -24,7 +24,13 @@ import '../components/library/library.css';
 export default function PlaylistPage() {
   const { playlistId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoggedIn, ready } = useAuth();
+
+  // Back goes to wherever the playlist was opened from. It is a real link
+  // rather than history.back(), so it still works after a reload or on a
+  // pasted URL — both arrive with no state and fall back to Playlists.
+  const back = location.state?.back ?? { to: '/library/playlists', label: 'Playlists' };
   const { resolve } = useCatalog();
   const { current, isPlaying, playOrToggle } = usePlayer();
   const playPlaylist = usePlayPlaylist();
@@ -72,7 +78,7 @@ export default function PlaylistPage() {
   function remove() {
     if (!confirm(`Delete the playlist “${playlist.name}”? The songs stay in the catalogue.`)) return;
     lib.removePlaylist(playlist.id);
-    navigate('/library/playlists');
+    navigate(back.to);
   }
 
   return (
@@ -80,6 +86,11 @@ export default function PlaylistPage() {
       {lib.error && <div className="error" role="alert">{lib.error}</div>}
 
       <header className="plhead">
+        <Link className="plhead__back" to={back.to}>
+          <ChevronLeft size={16} />
+          {back.label}
+        </Link>
+
         {renaming ? (
           <form className="plhead__rename" onSubmit={submitRename}>
             <label className="sr-only" htmlFor="playlist-name">Playlist name</label>

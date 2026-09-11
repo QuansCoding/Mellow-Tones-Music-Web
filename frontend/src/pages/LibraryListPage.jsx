@@ -60,7 +60,11 @@ export default function LibraryListPage({ kind }) {
           playable={playable}
           playing={playing}
           onPlay={() => playPlaylist(item)}
-          onOpen={() => navigate(`/library/playlists/${item.id}`)}
+          onOpen={() =>
+            navigate(`/library/playlists/${item.id}`, {
+              state: { back: { to: '/library/playlists', label: 'Playlists' } },
+            })
+          }
         />
       );
     }
@@ -79,8 +83,8 @@ export default function LibraryListPage({ kind }) {
         }
         actions={
           <>
-            <LikeButton song={item} />
             <AddToPlaylistButton song={item} />
+            <LikeButton song={item} />
           </>
         }
       />

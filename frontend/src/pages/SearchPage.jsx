@@ -102,8 +102,8 @@ export default function SearchPage() {
                 }
                 actions={
                   <>
-                    <LikeButton song={s} />
                     <AddToPlaylistButton song={s} />
+                    <LikeButton song={s} />
                   </>
                 }
               />
