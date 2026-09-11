@@ -86,6 +86,46 @@ export const addSongToPlaylist = (playlistId, songId) =>
 export const removeSongFromPlaylist = (playlistId, songId) =>
   API.delete(`/me/playlists/${playlistId}/songs/${songId}`);
 
+/** Owner-only. Public playlists can be opened by anyone and can appear on Home. */
+export const setPlaylistPublic = (id, isPublic) =>
+  API.patch(`/me/playlists/${id}`, { is_public: isPublic });
+
+// ---------------------------------------------------------------------------
+// Plays + discovery — all public, no sign-in needed.
+// ---------------------------------------------------------------------------
+
+/**
+ * A random id this browser keeps, so the server's replay cooldown can tell
+ * one signed-out listener from another. It identifies a browser, not a
+ * person, and is ignored once signed in.
+ */
+function listenerId() {
+  try {
+    let id = localStorage.getItem('listenerId');
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem('listenerId', id);
+    }
+    return id;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Called by the player after 30s of real listening. */
+export const recordPlay = (songId, playlistId = null) =>
+  API.post('/plays', {
+    song_id: songId,
+    playlist_id: playlistId,
+    listener_id: listenerId(),
+  });
+
+/** Everything the front page shows, in one round trip. */
+export const fetchHome = () => API.get('/home');
+export const fetchArtist = (id) => API.get(`/artists/${id}`);
+/** A public playlist (or your own). 404 for anyone else's private one. */
+export const fetchPublicPlaylist = (id) => API.get(`/playlists/${id}`);
+
 // ---------------------------------------------------------------------------
 // Search
 // ---------------------------------------------------------------------------

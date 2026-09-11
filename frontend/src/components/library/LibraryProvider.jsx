@@ -17,6 +17,7 @@ function fromApi(data) {
       id: p.id,
       name: p.name,
       songIds: p.song_ids,
+      isPublic: p.is_public,
     })),
   };
 }
@@ -142,7 +143,9 @@ export default function LibraryProvider({ children }) {
     if (!clean) return null;
     try {
       const { data } = await api.createPlaylist(clean);
-      const playlist = { id: data.id, name: data.name, songIds: data.song_ids };
+      const playlist = {
+        id: data.id, name: data.name, songIds: data.song_ids, isPublic: data.is_public,
+      };
       setState((s) => ({ ...s, playlists: [...s.playlists, playlist] }));
       setError('');
       return playlist;
@@ -167,6 +170,20 @@ export default function LibraryProvider({ children }) {
         }),
         () => api.renamePlaylist(id, clean),
         'Could not rename that playlist',
+      );
+    },
+    [mutate],
+  );
+
+  const setPlaylistPublic = useCallback(
+    (id, isPublic) => {
+      mutate(
+        (s) => ({
+          ...s,
+          playlists: s.playlists.map((p) => (p.id === id ? { ...p, isPublic } : p)),
+        }),
+        () => api.setPlaylistPublic(id, isPublic),
+        'Could not change who can see that playlist',
       );
     },
     [mutate],
@@ -250,14 +267,15 @@ export default function LibraryProvider({ children }) {
       toggleArtist,
       createPlaylist,
       renamePlaylist,
+      setPlaylistPublic,
       removePlaylist,
       addSongToPlaylist,
       togglePlaylistSong,
     };
   }, [
     state, loading, error, userId,
-    toggleLike, toggleArtist, createPlaylist, renamePlaylist, removePlaylist,
-    addSongToPlaylist, togglePlaylistSong,
+    toggleLike, toggleArtist, createPlaylist, renamePlaylist, setPlaylistPublic,
+    removePlaylist, addSongToPlaylist, togglePlaylistSong,
   ]);
 
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;

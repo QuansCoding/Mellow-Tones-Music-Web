@@ -2,7 +2,8 @@ import re
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
-    String, Integer, DateTime, ForeignKey, UniqueConstraint, Index, func,
+    Boolean, String, Integer, DateTime, ForeignKey, UniqueConstraint, Index,
+    false, func,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -138,6 +139,11 @@ class Playlist(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(100))
+    # Private until the owner opts in. A public playlist can be opened by
+    # anyone with its link and is eligible for the home page; flipping the
+    # default would have exposed every playlist that already existed.
+    is_public: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(
@@ -168,3 +174,37 @@ class PlaylistSong(Base):
 
 Index("ix_playlist_songs_playlist_position",
       PlaylistSong.playlist_id, PlaylistSong.position)
+
+
+class PlayEvent(Base):
+    """One counted listen.
+
+    An event per play rather than a counter on Song: a counter can say how
+    many plays a song has ever had, but not how many it had *today*, and
+    "today" is what Trending ranks by. The same rows also rank artists (via
+    the song) and playlists (via `playlist_id`, set when the song was played
+    as part of one).
+
+    `listener_key` is "u:<user id>" or "a:<browser id>" and exists only for
+    the replay cooldown. Deleting a user keeps their plays in the totals.
+    """
+    __tablename__ = "play_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    song_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("songs.id", ondelete="CASCADE"))
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    playlist_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("playlists.id", ondelete="SET NULL"), nullable=True)
+    listener_key: Mapped[str] = mapped_column(String(64))
+    played_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, index=True)
+
+
+Index("ix_play_events_song_played", PlayEvent.song_id, PlayEvent.played_at)
+Index("ix_play_events_playlist_played",
+      PlayEvent.playlist_id, PlayEvent.played_at)
+Index("ix_play_events_listener_song_played",
+      PlayEvent.listener_key, PlayEvent.song_id, PlayEvent.played_at)

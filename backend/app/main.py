@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .router import songs, auth, library, search
+from .router import songs, auth, library, search, discover
 
 # Schema is owned by Alembic — run `alembic upgrade head`.
 #
@@ -23,3 +23,4 @@ app.include_router(songs.router)
 app.include_router(auth.router)
 app.include_router(library.router)
 app.include_router(search.router)
+app.include_router(discover.router)

@@ -6,10 +6,16 @@ export function formatTime(seconds) {
   return `${mins}:${secs}`;
 }
 
-/** Large play counts -> "1.2M" / "45.3K". */
+/** Large play counts -> "1.2M" / "45.3K" / "2K" (no trailing ".0"). */
 export function formatCount(n) {
   if (!Number.isFinite(n)) return '—';
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  const short = (v, unit) => `${v.toFixed(1).replace(/\.0$/, '')}${unit}`;
+  if (n >= 1_000_000) return short(n / 1_000_000, 'M');
+  if (n >= 1_000) return short(n / 1_000, 'K');
   return String(n);
+}
+
+/** "1 play" / "12 plays" / "1.2K plays". */
+export function formatPlays(n) {
+  return `${formatCount(n)} ${n === 1 ? 'play' : 'plays'}`;
 }

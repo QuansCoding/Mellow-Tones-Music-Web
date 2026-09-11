@@ -15,6 +15,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Artist, Song, User, normalize_artist
+from ..plays import song_play_counts, songs_out
 from ..schemas import SongOut, SongUpdate
 from ..security import get_current_user
 from ..storage import UPLOAD_DIR, save_audio
@@ -28,7 +29,9 @@ def list_songs(db: Session = Depends(get_db)):
     # TODO 1: return every song, newest first
     #   Hint: db.query(Song).order_by(Song.created_at.desc()).all()
     db_songs = db.query(Song).order_by(Song.created_at.desc()).all()
-    return db_songs
+    # All-time plays ride along with the catalogue, so every surface that
+    # shows a song can show its count without a second request.
+    return songs_out(db_songs, song_play_counts(db))
 
 
 @router.get("/mine", response_model=list[SongOut])

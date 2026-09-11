@@ -31,7 +31,7 @@ export default function PlaylistPage() {
   // rather than history.back(), so it still works after a reload or on a
   // pasted URL — both arrive with no state and fall back to Playlists.
   const back = location.state?.back ?? { to: '/library/playlists', label: 'Playlists' };
-  const { resolve } = useCatalog();
+  const { resolve, error: catalogError } = useCatalog();
   const { current, isPlaying, playOrToggle } = usePlayer();
   const playPlaylist = usePlayPlaylist();
   const playbackOf = usePlaylistPlayback();
@@ -39,6 +39,7 @@ export default function PlaylistPage() {
 
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
+  const [copied, setCopied] = useState(false);
 
   if (!ready) return null;
   if (!isLoggedIn) return <SignInPrompt what="your playlists" />;
@@ -81,9 +82,27 @@ export default function PlaylistPage() {
     navigate(back.to);
   }
 
+  function setPublic(next) {
+    setCopied(false);
+    lib.setPlaylistPublic(playlist.id, next);
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/playlists/${playlist.id}`);
+      setCopied(true);
+    } catch {
+      // Clipboard access can be refused; the button just does nothing then.
+    }
+  }
+
   return (
     <>
-      {lib.error && <div className="error" role="alert">{lib.error}</div>}
+      {(lib.error || catalogError) && (
+        <div className="error" role="alert">
+          {lib.error || 'Couldn’t load songs from the server — retrying…'}
+        </div>
+      )}
 
       <header className="plhead">
         <Link className="plhead__back" to={back.to}>
@@ -131,6 +150,37 @@ export default function PlaylistPage() {
             Delete playlist
           </button>
         </div>
+
+        {/* A switch with a fixed label, not a button reading "Public"/"Private":
+            a button labelled with a state is ambiguous about whether it shows
+            the current state or the one you would switch to. The note spells
+            out the consequence either way. */}
+        <div className="plhead__share">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={playlist.isPublic}
+            className="plvis"
+            onClick={() => setPublic(!playlist.isPublic)}
+          >
+            <span className="plvis__track" aria-hidden="true">
+              <span className="plvis__knob" />
+            </span>
+            Public
+          </button>
+          <p className="plhead__note">
+            {playlist.isPublic ? (
+              <>
+                Anyone can open and play this, and it can appear on the home page.{' '}
+                <button type="button" className="linkish" onClick={copyLink}>
+                  {copied ? 'Link copied' : 'Copy link'}
+                </button>
+              </>
+            ) : (
+              'Only you can see this playlist.'
+            )}
+          </p>
+        </div>
       </header>
 
       <section className="section" aria-labelledby="pl-songs">
@@ -152,7 +202,7 @@ export default function PlaylistPage() {
                     className="plrow__main"
                     // Queue the whole playlist behind whichever row is picked,
                     // so playing from the middle still advances to the end.
-                    onClick={() => playOrToggle(song, songs)}
+                    onClick={() => playOrToggle(song, songs, { playlistId: playlist.id })}
                     aria-label={nowPlaying ? `Pause ${song.title}` : `Play ${song.title}`}
                   >
                     <span className="plrow__index" aria-hidden="true">{i + 1}</span>
