@@ -551,6 +551,28 @@
   margin-bottom: var(--sp-6);
 }
 
+/* Negative left margin lines the chevron up with the title's left edge
+   while the padding keeps a comfortable hit area. */
+.plhead__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 32px;
+  padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-1);
+  margin: 0 0 var(--sp-2) calc(var(--sp-1) * -1);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-soft);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease);
+}
+
+.plhead__back:hover {
+  color: var(--color-text-cream);
+  background: var(--color-row-hover);
+}
+
 .plhead__title {
   font-size: var(--fs-2xl);
   font-weight: 700;

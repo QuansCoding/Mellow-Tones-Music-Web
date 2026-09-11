@@ -117,6 +117,14 @@ export function ChevronDown({ size = 20 }) {
   );
 }
 
+export function ChevronLeft({ size = 16 }) {
+  return (
+    <svg {...base} width={size} height={size} viewBox="0 0 16 16">
+      <path {...stroke} d="m10 4-4 4 4 4" />
+    </svg>
+  );
+}
+
 export function Menu({ size = 20 }) {
   return (
     <svg {...base} width={size} height={size} viewBox="0 0 16 16">
