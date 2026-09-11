@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { usePlayer } from './player/playerContext';
+import { genreLabel, useGenres } from '../hooks/useGenres';
 
 export default function SongCard({ song, onPlay, onEdit, onDelete }) {
   const { current, isPlaying } = usePlayer();
+  const genres = useGenres();
   const nowPlaying = current?.id === song.id && isPlaying;
   const mins = Math.floor(song.duration_sec / 60);
   const secs = String(song.duration_sec % 60).padStart(2, '0');
@@ -10,12 +12,14 @@ export default function SongCard({ song, onPlay, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(song.title);
   const [artist, setArtist] = useState(song.artist);
+  const [genre, setGenre] = useState(song.genre ?? '');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
   function startEdit() {
     setTitle(song.title);
     setArtist(song.artist);
+    setGenre(song.genre ?? '');
     setErr('');
     setEditing(true);
   }
@@ -25,7 +29,11 @@ export default function SongCard({ song, onPlay, onEdit, onDelete }) {
     setSaving(true);
     setErr('');
     try {
-      await onEdit(song.id, { title: title.trim(), artist: artist.trim() });
+      await onEdit(song.id, {
+        title: title.trim(),
+        artist: artist.trim(),
+        genre: genre || null,
+      });
       setEditing(false);
     } catch {
       setErr('Could not save those changes');
@@ -53,6 +61,17 @@ export default function SongCard({ song, onPlay, onEdit, onDelete }) {
           placeholder="Artist"
           required
         />
+        <label className="sr-only" htmlFor={`genre-${song.id}`}>Genre</label>
+        <select
+          id={`genre-${song.id}`}
+          value={genre}
+          onChange={(e) => setGenre(e.target.value)}
+        >
+          <option value="">No genre</option>
+          {genres.map((g) => (
+            <option key={g.id} value={g.id}>{g.label}</option>
+          ))}
+        </select>
         {err && <p className="error">{err}</p>}
         <div className="song-actions">
           <button type="submit" className="button button-primary" disabled={saving}>
@@ -74,7 +93,10 @@ export default function SongCard({ song, onPlay, onEdit, onDelete }) {
   return (
     <div className="song-card">
       <h3>{song.title}</h3>
-      <p className="artist">{song.artist}</p>
+      <p className="artist">
+        {song.artist}
+        {genreLabel(genres, song.genre) && ` · ${genreLabel(genres, song.genre)}`}
+      </p>
       <p className="dur">{mins}:{secs}</p>
       <div className="song-actions">
         <button className="button button-primary" onClick={() => onPlay(song)}>

@@ -14,6 +14,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from ..database import get_db
+from ..genres import clean_genre
 from ..models import Artist, Song, User, normalize_artist
 from ..plays import song_play_counts, songs_out
 from ..schemas import SongOut, SongUpdate
@@ -94,6 +95,7 @@ async def upload_song(
     artist: str = Form(...),
     duration_sec: int = Form(...),
     file: UploadFile = File(...),
+    genre: str | None = Form(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -109,12 +111,16 @@ async def upload_song(
     if len(data) > MAX_BYTES:
         raise HTTPException(413, "File too large (max 15 MB)")
 
+    # Validated before the file is written, so a bad genre cannot leave an
+    # orphaned upload on disk.
+    genre_key = clean_genre(genre)
     artist_row = get_or_create_artist(db, artist)
 
     key = save_audio(data, file.filename)
     song = Song(
         title=title, artist_id=artist_row.id, duration_sec=duration_sec,
         storage_key=key, size_bytes=len(data), uploader_id=user.id,
+        genre=genre_key,
     )
     db.add(song)
     db.commit()
@@ -201,6 +207,8 @@ def update_song(song_id: uuid.UUID, changes: SongUpdate,
         song.title = title
     if "artist" in data:
         song.artist_id = get_or_create_artist(db, data["artist"] or "").id
+    if "genre" in data:
+        song.genre = clean_genre(data["genre"])
 
     db.commit()
     db.refresh(song)

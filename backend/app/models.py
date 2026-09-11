@@ -80,6 +80,8 @@ class Song(Base):
     artist: Mapped["Artist"] = relationship(back_populates="songs", lazy="joined")
 
     duration_sec: Mapped[int] = mapped_column(Integer)
+    # A key from app.genres.GENRES, or None for untagged.
+    genre: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
     storage_key: Mapped[str] = mapped_column(String(500))
     size_bytes: Mapped[int] = mapped_column(Integer)
 
@@ -185,8 +187,10 @@ class PlayEvent(Base):
     the song) and playlists (via `playlist_id`, set when the song was played
     as part of one).
 
-    `listener_key` is "u:<user id>" or "a:<browser id>" and exists only for
-    the replay cooldown. Deleting a user keeps their plays in the totals.
+    Only signed-in listens are recorded. `listener_key` ("u:<user id>")
+    exists for the replay cooldown and is a string so another kind of
+    listener could be added without a migration. Deleting a user keeps their
+    plays in the totals.
     """
     __tablename__ = "play_events"
 

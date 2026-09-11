@@ -11,6 +11,7 @@ import ManagePage from './pages/ManagePage';
 import PlaylistPage from './pages/PlaylistPage';
 import PublicPlaylistPage from './pages/PublicPlaylistPage';
 import ArtistPage from './pages/ArtistPage';
+import DiscoverPage from './pages/DiscoverPage';
 import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
@@ -24,7 +25,7 @@ export default function App() {
         {/* Browsing is public: GET /songs and the stream endpoint carry no
             auth dependency, so the shell renders signed out. */}
         <Route path="search" element={<SearchPage />} />
-        <Route path="discover" element={<StubPage title="Discover" />} />
+        <Route path="discover" element={<DiscoverPage />} />
         <Route path="create" element={<StubPage title="Create" />} />
         <Route path="artists/:artistId" element={<ArtistPage />} />
         {/* Read-only; your own playlists live under /library/playlists. */}

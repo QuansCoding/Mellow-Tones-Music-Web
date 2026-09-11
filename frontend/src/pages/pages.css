@@ -245,7 +245,8 @@
 
 /* Inline edit form. Bare `input` is deliberately not styled globally, so the
    edit fields need their own rule to match the dark card. */
-.song-card input {
+.song-card input,
+.song-card select {
   width: 100%;
   margin-bottom: var(--sp-2);
   padding: var(--sp-2) var(--sp-3);
@@ -256,7 +257,8 @@
   border-radius: var(--radius-sm);
 }
 
-.song-card input:focus-visible {
+.song-card input:focus-visible,
+.song-card select:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 1px;
 }
