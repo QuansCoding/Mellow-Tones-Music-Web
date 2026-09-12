@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from ..antibot import check_email, verify_human
+from ..cleanup import is_abandoned, maybe_sweep
 from ..database import get_db
 from ..models import EmailVerification, User
 from ..schemas import UserCreate, UserOut, VerificationPending, VerifyCode
@@ -15,19 +15,20 @@ from ..verification import check_code, ensure_code, seconds_until_resend, send_c
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# An account that never verified stops holding its username and email after
-# this long, so nobody can squat a name (or someone else's address) forever.
-UNVERIFIED_HOLD = timedelta(hours=24)
-
 
 def _release_if_abandoned(db: Session, user: User) -> bool:
-    """Delete an old, never-verified account. True if it was deleted."""
-    cutoff = datetime.now(timezone.utc) - UNVERIFIED_HOLD
-    if user.email_verified_at is None and user.created_at < cutoff:
-        db.delete(user)
-        db.flush()
-        return True
-    return False
+    """Delete a sign-up that was never finished. True if it was deleted.
+
+    Stops anyone squatting a username (or someone else's email) by starting a
+    sign-up they never complete. Same "abandoned" rule the sweep uses
+    (cleanup.py), applied the instant another person wants that name instead
+    of waiting for the next sweep.
+    """
+    if not is_abandoned(user, db.get(EmailVerification, user.id)):
+        return False
+    db.delete(user)
+    db.flush()
+    return True
 
 
 def _pending(db: Session, user: User, sent: bool) -> VerificationPending:
@@ -41,6 +42,9 @@ def _pending(db: Session, user: User, sent: bool) -> VerificationPending:
 
 @router.post("/register", response_model=VerificationPending, status_code=201)
 def register(user_create: UserCreate, db: Session = Depends(get_db)):
+    # Before this request has changes of its own pending: the sweep commits.
+    maybe_sweep(db)
+
     # Cheapest check that stops scripts goes first, before any DNS or
     # database work is spent on them.
     verify_human(user_create.captcha_token)
@@ -86,6 +90,8 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
+    maybe_sweep(db)
+
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(

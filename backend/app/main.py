@@ -1,3 +1,4 @@
+import logging
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +10,12 @@ from .router import songs, auth, library, search, discover
 # tables and never ALTERs existing ones, so it silently diverges from the
 # models the moment a column changes. Leaving it in alongside migrations is
 # worse still: it creates tables behind Alembic's back.
+
+# Send this app's own log lines (cleanup counts, storage failures) to the
+# host's log. uvicorn configures only its own loggers, so without this the
+# app's INFO lines would never be printed.
+logging.basicConfig(level=logging.INFO,
+                    format="%(levelname)s:%(name)s:%(message)s")
 
 app = FastAPI(title="Quan's Music API")
 
