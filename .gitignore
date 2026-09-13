@@ -26,3 +26,4 @@ backend\app\__pycache__
 backend\alembic\versions\__pycache__
 backend\alembic\__pycache__\env.cpython-313.pyc
 backend\venv\Lib\site-packages\__pycache__
+*res.json*
